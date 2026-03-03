@@ -1,12 +1,23 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { HeroCarousel } from "@/components/home/HeroCarousel";
+import { CategoryGrid } from "@/components/home/CategoryGrid";
+import { ProductSection } from "@/components/home/ProductSection";
+import { PromoBanner } from "@/components/home/PromoBanner";
+import { TrustBadges } from "@/components/home/TrustBadges";
+import { LookbookStrip } from "@/components/home/LookbookStrip";
+import { Newsletter } from "@/components/home/Newsletter";
+import { getNewArrivals, getBestSellers } from "@/data/products";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div>
+      <HeroCarousel />
+      <CategoryGrid />
+      <ProductSection title="New Arrivals" products={getNewArrivals()} viewAllLink="/products?filter=new" />
+      <PromoBanner />
+      <ProductSection title="Best Sellers" products={getBestSellers()} viewAllLink="/products" />
+      <TrustBadges />
+      <LookbookStrip />
+      <Newsletter />
     </div>
   );
 };
