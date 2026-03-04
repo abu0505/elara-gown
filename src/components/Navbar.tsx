@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, Heart, ShoppingBag, Menu, X } from "lucide-react";
+import { Search, ShoppingBag, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useCartStore } from "@/stores/cartStore";
-import { useWishlistStore } from "@/stores/wishlistStore";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -12,6 +11,18 @@ const navLinks = [
   { label: "Shop All", href: "/products" },
   { label: "New Arrivals", href: "/products?filter=new" },
   { label: "Sale", href: "/products?category=sale" },
+];
+
+const mobileMenuLinks = [
+  { label: "🏠 Home", href: "/" },
+  { label: "👗 Shop All", href: "/products" },
+  { label: "🆕 New Arrivals", href: "/products?filter=new" },
+  { label: "🔥 Best Sellers", href: "/products?filter=bestseller" },
+  { label: "🎉 Sale", href: "/products?category=sale" },
+  { label: "📦 Track My Order", href: "/account/orders" },
+  { label: "🔄 Returns", href: "/returns" },
+  { label: "📞 Contact Us", href: "/contact" },
+  { label: "ℹ️ About Us", href: "/about" },
 ];
 
 interface NavbarProps {
@@ -23,7 +34,6 @@ export function Navbar({ onSearchOpen, onCartOpen }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const totalItems = useCartStore((s) => s.getTotalItems());
-  const wishlistCount = useWishlistStore((s) => s.items.length);
   const location = useLocation();
 
   useEffect(() => {
@@ -57,9 +67,9 @@ export function Navbar({ onSearchOpen, onCartOpen }: NavbarProps) {
               </Link>
             </div>
             <nav className="flex flex-col">
-              {navLinks.map((link) => (
+              {mobileMenuLinks.map((link) => (
                 <Link
-                  key={link.href}
+                  key={link.href + link.label}
                   to={link.href}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
@@ -100,16 +110,6 @@ export function Navbar({ onSearchOpen, onCartOpen }: NavbarProps) {
           <Button variant="ghost" size="icon" aria-label="Search" onClick={onSearchOpen}>
             <Search className="h-5 w-5" />
           </Button>
-          <Link to="/products?filter=wishlist">
-            <Button variant="ghost" size="icon" aria-label="Wishlist" className="relative">
-              <Heart className="h-5 w-5" />
-              {wishlistCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center font-semibold">
-                  {wishlistCount}
-                </span>
-              )}
-            </Button>
-          </Link>
           <Button variant="ghost" size="icon" aria-label="Cart" className="relative" onClick={onCartOpen}>
             <ShoppingBag className="h-5 w-5" />
             {totalItems > 0 && (
