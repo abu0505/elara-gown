@@ -1,8 +1,7 @@
-import { Heart, Star, ShoppingBag } from "lucide-react";
+import { Star, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useWishlistStore } from "@/stores/wishlistStore";
 import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
 import type { Product } from "@/data/products";
@@ -15,16 +14,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, className }: ProductCardProps) {
-  const { isInWishlist, toggleWishlist } = useWishlistStore();
   const addItem = useCartStore((s) => s.addItem);
-  const wishlisted = isInWishlist(product.id);
-
-  const handleWishlist = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    toggleWishlist(product);
-    toast(wishlisted ? "Removed from wishlist" : "❤️ Added to wishlist");
-  };
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -69,16 +59,6 @@ export function ProductCard({ product, className }: ProductCardProps) {
               <Badge className="bg-accent text-accent-foreground text-[10px] px-2 py-0.5">SALE</Badge>
             )}
           </div>
-          {/* Wishlist */}
-          <button
-            onClick={handleWishlist}
-            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center transition-colors hover:bg-background"
-            aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-          >
-            <Heart
-              className={cn("h-4 w-4 transition-colors", wishlisted ? "fill-primary text-primary" : "text-foreground")}
-            />
-          </button>
         </div>
 
         {/* Info */}

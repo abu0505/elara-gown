@@ -8,9 +8,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { SizeGuideModal } from "@/components/SizeGuideModal";
 import { ProductCard } from "@/components/ProductCard";
 import { useCartStore } from "@/stores/cartStore";
-import { useWishlistStore } from "@/stores/wishlistStore";
 import { toast } from "sonner";
-import { Heart, Star, Minus, Plus, Share2, ShoppingBag, Truck, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, Minus, Plus, ShoppingBag, Truck, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -19,7 +18,6 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const product = getProductById(productId || "");
   const addItem = useCartStore((s) => s.addItem);
-  const { isInWishlist, toggleWishlist } = useWishlistStore();
 
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState(0);
@@ -36,7 +34,6 @@ const ProductDetail = () => {
     );
   }
 
-  const wishlisted = isInWishlist(product.id);
   const productReviews = allReviews.filter((r) => r.productId === product.id);
   const relatedProducts = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 8);
 
@@ -65,7 +62,6 @@ const ProductDetail = () => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
       <div className="container py-4 md:py-8">
-        {/* Breadcrumb */}
         <nav className="text-xs text-muted-foreground mb-4 font-body">
           <Link to="/" className="hover:text-primary">Home</Link>
           <span className="mx-1">/</span>
@@ -99,15 +95,7 @@ const ProductDetail = () => {
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
-              <button
-                onClick={() => toggleWishlist(product)}
-                className="absolute top-3 right-3 h-9 w-9 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center"
-                aria-label="Wishlist"
-              >
-                <Heart className={cn("h-5 w-5", wishlisted ? "fill-primary text-primary" : "text-foreground")} />
-              </button>
             </div>
-            {/* Thumbnails */}
             <div className="flex gap-2 overflow-x-auto scrollbar-hide">
               {product.images.map((img, i) => (
                 <button
@@ -132,17 +120,13 @@ const ProductDetail = () => {
               <div className="flex items-center gap-2 mt-1">
                 <div className="flex items-center gap-0.5">
                   {[1, 2, 3, 4, 5].map((s) => (
-                    <Star
-                      key={s}
-                      className={cn("h-4 w-4", s <= Math.round(product.rating) ? "fill-accent text-accent" : "text-border")}
-                    />
+                    <Star key={s} className={cn("h-4 w-4", s <= Math.round(product.rating) ? "fill-accent text-accent" : "text-border")} />
                   ))}
                 </div>
                 <span className="text-sm text-muted-foreground font-body">{product.rating} ({product.reviewCount} reviews)</span>
               </div>
             </div>
 
-            {/* Price */}
             <div className="flex items-baseline gap-3">
               <span className="text-2xl font-bold font-body text-primary">₹{product.price.toLocaleString()}</span>
               {product.originalPrice > product.price && (
@@ -159,7 +143,6 @@ const ProductDetail = () => {
 
             <Separator />
 
-            {/* Size */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-semibold font-body">Select Size</h3>
@@ -188,7 +171,6 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* Color */}
             <div>
               <h3 className="text-sm font-semibold font-body mb-2">
                 Color: <span className="font-normal text-muted-foreground">{product.colors[selectedColor].name}</span>
@@ -209,29 +191,19 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* Quantity */}
             <div>
               <h3 className="text-sm font-semibold font-body mb-2">Quantity</h3>
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="h-9 w-9 rounded-lg border border-border flex items-center justify-center"
-                  aria-label="Decrease"
-                >
+                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="h-9 w-9 rounded-lg border border-border flex items-center justify-center" aria-label="Decrease">
                   <Minus className="h-4 w-4" />
                 </button>
                 <span className="w-6 text-center font-medium font-body">{quantity}</span>
-                <button
-                  onClick={() => setQuantity((q) => Math.min(10, q + 1))}
-                  className="h-9 w-9 rounded-lg border border-border flex items-center justify-center"
-                  aria-label="Increase"
-                >
+                <button onClick={() => setQuantity((q) => Math.min(10, q + 1))} className="h-9 w-9 rounded-lg border border-border flex items-center justify-center" aria-label="Increase">
                   <Plus className="h-4 w-4" />
                 </button>
               </div>
             </div>
 
-            {/* Desktop CTAs */}
             <div className="hidden md:flex gap-3">
               <Button variant="outline" className="flex-1 h-12" onClick={handleAddToCart}>
                 <ShoppingBag className="h-4 w-4 mr-2" /> Add to Cart
@@ -241,7 +213,6 @@ const ProductDetail = () => {
 
             <Separator />
 
-            {/* Accordion details */}
             <Accordion type="multiple" defaultValue={["details"]}>
               <AccordionItem value="details">
                 <AccordionTrigger className="font-body text-sm font-semibold">Product Details</AccordionTrigger>
@@ -266,7 +237,6 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Reviews */}
         {productReviews.length > 0 && (
           <section className="mt-12">
             <h2 className="font-heading text-xl font-bold mb-6">Customer Reviews</h2>
@@ -314,7 +284,6 @@ const ProductDetail = () => {
           </section>
         )}
 
-        {/* Related products */}
         {relatedProducts.length > 0 && (
           <section className="mt-12">
             <h2 className="font-heading text-xl font-bold mb-6">You May Also Like</h2>
@@ -329,7 +298,6 @@ const ProductDetail = () => {
         )}
       </div>
 
-      {/* Mobile sticky CTAs */}
       <div className="fixed bottom-14 left-0 right-0 bg-background border-t border-border p-3 flex gap-2 md:hidden z-40">
         <Button variant="outline" className="flex-1 h-11" onClick={handleAddToCart}>
           <ShoppingBag className="h-4 w-4 mr-1" /> Add to Cart
