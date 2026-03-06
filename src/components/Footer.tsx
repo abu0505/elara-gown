@@ -50,9 +50,9 @@ export function Footer() {
         <div>
           <h4 className="font-heading text-sm font-semibold mb-3">Contact Us</h4>
           <ul className="space-y-2 text-sm text-muted-foreground font-body">
-            <li>📍 Mumbai, Maharashtra</li>
-            <li><a href="tel:+919876543210" className="hover:text-primary">📞 +91 98765 43210</a></li>
-            <li><a href="mailto:hello@elara.store" className="hover:text-primary">📧 hello@elara.store</a></li>
+            <li className="flex items-center gap-2"><MapPin className="h-4 w-4 flex-shrink-0" /> Mumbai, Maharashtra</li>
+            <li><a href="tel:+919876543210" className="hover:text-primary flex items-center gap-2"><PhoneIcon className="h-4 w-4 flex-shrink-0" /> +91 98765 43210</a></li>
+            <li><a href="mailto:hello@elara.store" className="hover:text-primary flex items-center gap-2"><Mail className="h-4 w-4 flex-shrink-0" /> hello@elara.store</a></li>
           </ul>
         </div>
       </div>
