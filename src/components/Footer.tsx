@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { MapPin, Phone as PhoneIcon, Mail } from "lucide-react";
 import { Instagram, Facebook, Youtube } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
