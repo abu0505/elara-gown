@@ -1,20 +1,23 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdminStore } from "@/stores/adminStore";
 
 export function RequireAdmin({ children }: { children: React.ReactNode }) {
   const { admin, loading, fetchAdmin } = useAdminStore();
   const navigate = useNavigate();
+  const hasChecked = useRef(false);
 
   useEffect(() => {
-    if (!admin && !loading) {
+    // On mount (or reload), always attempt to restore the session once
+    if (!hasChecked.current) {
+      hasChecked.current = true;
       fetchAdmin().then((a) => {
         if (!a) navigate("/admin/login", { replace: true });
       });
     }
-  }, [admin, loading, fetchAdmin, navigate]);
+  }, [fetchAdmin, navigate]);
 
-  if (loading) {
+  if (loading || (!admin && !hasChecked.current)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />

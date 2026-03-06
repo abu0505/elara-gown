@@ -1,14 +1,50 @@
 import { Link } from "react-router-dom";
-import { categories } from "@/data/categories";
+import { categories as hardcodedCategories } from "@/data/categories";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 
+interface DBCategory {
+  id: string;
+  name: string;
+  slug: string;
+  image_url: string | null;
+  is_active: boolean;
+}
+
 export function CategoryGrid() {
+  const { data: dbCategories } = useQuery({
+    queryKey: ["categories", "active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name, slug, image_url, is_active")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+
+      if (error || !data || data.length === 0) {
+        return null;
+      }
+      return data as DBCategory[];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const categories = dbCategories
+    ? dbCategories.map((c) => ({
+      id: c.slug,
+      name: c.name,
+      image: c.image_url || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80&fit=crop&auto=format",
+      productCount: 0,
+    }))
+    : hardcodedCategories;
+
   return (
     <section className="container py-8 md:py-16">
       <h2 className="font-heading text-xl md:text-2xl font-bold text-center mb-6 md:mb-8">
         Shop by Category
       </h2>
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-4 md:gap-6">
+      <div className={`grid grid-cols-3 ${categories.length <= 6 ? 'md:grid-cols-' + Math.min(categories.length, 6) : 'md:grid-cols-6'} gap-4 md:gap-6`}>
         {categories.map((cat, i) => (
           <motion.div
             key={cat.id}

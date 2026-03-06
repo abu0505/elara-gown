@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminStore } from "@/stores/adminStore";
@@ -15,8 +15,20 @@ const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const navigate = useNavigate();
   const fetchAdmin = useAdminStore((s) => s.fetchAdmin);
+
+  // Auto-redirect if already logged in as an admin
+  useEffect(() => {
+    fetchAdmin().then((admin) => {
+      if (admin) {
+        navigate("/admin", { replace: true });
+      } else {
+        setCheckingSession(false);
+      }
+    });
+  }, [fetchAdmin, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +51,14 @@ const AdminLogin = () => {
       setLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-secondary to-background">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-secondary to-background p-4">

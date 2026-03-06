@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { products as hardcodedProducts } from "@/data/products";
-import { categories } from "@/data/categories";
+import { categories as hardcodedCategories } from "@/data/categories";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SlidersHorizontal, X } from "lucide-react";
 import { useFilterStore, type SortOption } from "@/stores/filterStore";
 import { useAllProducts } from "@/hooks/useProducts";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
@@ -25,6 +27,21 @@ const Products = () => {
 
   const { data: dbProducts } = useAllProducts();
   const allProducts = dbProducts || hardcodedProducts;
+
+  const { data: dbCategories } = useQuery({
+    queryKey: ["categories", "active-for-filter"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name, slug")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error || !data || data.length === 0) return null;
+      return data.map((c) => ({ id: c.slug, name: c.name }));
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+  const categories = dbCategories || hardcodedCategories;
 
   const {
     category: filterCats, priceRange, sizes, sortBy,
@@ -79,7 +96,7 @@ const Products = () => {
       </div>
       <div>
         <h4 className="text-sm font-semibold mb-3 font-body">Price Range</h4>
-        <Slider value={priceRange} onValueChange={(v) => setPriceRange(v as [number, number])} min={0} max={5000} step={100} className="mb-2" />
+        <Slider value={priceRange} onValueChange={(v) => setPriceRange(v as [number, number])} min={0} max={15000} step={100} className="mb-2" />
         <div className="flex justify-between text-xs text-muted-foreground font-body">
           <span>₹{priceRange[0]}</span><span>₹{priceRange[1]}</span>
         </div>

@@ -23,7 +23,7 @@ const Inventory = () => {
     setLoading(true);
     const { data } = await supabase
       .from('products')
-      .select('*, categories(name), product_variants(stock_qty)')
+      .select('*, categories(name), product_variants(stock_qty), product_images(public_url, is_primary, sort_order)')
       .order('created_at', { ascending: false });
     setProducts(data || []);
     setLoading(false);
@@ -36,10 +36,16 @@ const Inventory = () => {
 
   const deleteProduct = async () => {
     if (!deleteId) return;
-    await supabase.from('products').update({ is_active: false }).eq('id', deleteId);
-    toast.success("Product deactivated");
-    setDeleteId(null);
-    fetchProducts();
+    try {
+      const { error } = await supabase.from('products').delete().eq('id', deleteId);
+      if (error) throw error;
+      toast.success("Product deleted successfully");
+      setDeleteId(null);
+      fetchProducts();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete product");
+      setDeleteId(null);
+    }
   };
 
   const filtered = products.filter(p =>
@@ -63,6 +69,7 @@ const Inventory = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="font-body text-xs w-[60px]">Image</TableHead>
                 <TableHead className="font-body text-xs">Product</TableHead>
                 <TableHead className="font-body text-xs">Category</TableHead>
                 <TableHead className="font-body text-xs">Price</TableHead>
@@ -73,13 +80,20 @@ const Inventory = () => {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground font-body">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground font-body">Loading...</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground font-body">No products found</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground font-body">No products found</TableCell></TableRow>
               ) : filtered.map((product) => {
                 const totalStock = (product.product_variants || []).reduce((sum: number, v: any) => sum + (v.stock_qty || 0), 0);
+                const images = product.product_images || [];
+                const primaryImage = images.find((i: any) => i.is_primary) || images.sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0))[0];
+                const imageUrl = primaryImage?.public_url || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=100&q=80&fit=crop&auto=format";
+
                 return (
                   <TableRow key={product.id}>
+                    <TableCell>
+                      <img src={imageUrl} alt={product.name} className="w-10 h-10 rounded object-cover border border-border" />
+                    </TableCell>
                     <TableCell className="font-body text-sm">
                       <div className="flex items-center gap-2">
                         <div className="font-medium">{product.name}</div>
@@ -127,10 +141,10 @@ const Inventory = () => {
       <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle className="font-body">Delete Product?</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground font-body">This will deactivate the product. It can be reactivated later.</p>
+          <p className="text-sm text-muted-foreground font-body">This will permanently delete the product and its associated data. This action cannot be undone.</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={deleteProduct}>Deactivate</Button>
+            <Button variant="destructive" onClick={deleteProduct}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

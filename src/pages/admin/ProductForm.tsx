@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ArrowLeft, Upload, X, Plus, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useAdminStore } from "@/stores/adminStore";
@@ -45,6 +46,11 @@ const ProductForm = () => {
   const [step, setStep] = useState(1);
   const [categories, setCategories] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
+  const [showNewCatDialog, setShowNewCatDialog] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatImageFile, setNewCatImageFile] = useState<File | null>(null);
+  const [newCatImagePreview, setNewCatImagePreview] = useState<string>("");
+  const [creatingCat, setCreatingCat] = useState(false);
 
   // Step 1
   const [name, setName] = useState("");
@@ -113,6 +119,64 @@ const ProductForm = () => {
   };
 
   const generateSlug = (n: string) => n.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+  const handleCategoryChange = (value: string) => {
+    if (value === "__new__") {
+      setShowNewCatDialog(true);
+    } else {
+      setCategoryId(value);
+    }
+  };
+
+  const handleCatImageSelect = async (file: File) => {
+    setNewCatImageFile(file);
+    setNewCatImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleCreateCategory = async () => {
+    const trimmed = newCatName.trim();
+    if (!trimmed) return;
+    if (!newCatImageFile) {
+      toast.error("Please upload a category image");
+      return;
+    }
+    setCreatingCat(true);
+    try {
+      const slug = generateSlug(trimmed);
+
+      // Compress and upload category image
+      let imageUrl = "";
+      const compressed = await compressImageToWebP(newCatImageFile);
+      const filename = `category-${slug}-${Date.now()}.webp`;
+      const storagePath = `categories/${filename}`;
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(storagePath, compressed.blob, { contentType: 'image/webp' });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(storagePath);
+      imageUrl = urlData.publicUrl;
+
+      const { data, error } = await supabase
+        .from('categories')
+        .insert({ name: trimmed, slug, is_active: true, image_url: imageUrl })
+        .select('id')
+        .single();
+      if (error) throw error;
+      // Refresh categories and auto-select
+      const { data: cats } = await supabase.from('categories').select('*').eq('is_active', true);
+      setCategories(cats || []);
+      setCategoryId(data.id);
+      setNewCatName("");
+      setNewCatImageFile(null);
+      setNewCatImagePreview("");
+      setShowNewCatDialog(false);
+      toast.success(`Category "${trimmed}" created!`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create category");
+    } finally {
+      setCreatingCat(false);
+    }
+  };
 
   const handleNameChange = (v: string) => {
     setName(v);
@@ -256,10 +320,13 @@ const ProductForm = () => {
               </div>
               <div className="space-y-2">
                 <Label className="font-body">Category *</Label>
-                <Select value={categoryId} onValueChange={setCategoryId}>
+                <Select value={categoryId} onValueChange={handleCategoryChange}>
                   <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
                     {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    <SelectItem value="__new__" className="text-primary font-medium">
+                      <span className="flex items-center gap-1"><Plus className="h-3 w-3" /> Create New Category</span>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -449,6 +516,61 @@ const ProductForm = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Create Category Dialog */}
+      <Dialog open={showNewCatDialog} onOpenChange={(open) => { setShowNewCatDialog(open); if (!open) { setNewCatImageFile(null); setNewCatImagePreview(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Create New Category</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="font-body">Category Name *</Label>
+              <Input
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                placeholder="e.g. Bridal Wear"
+                autoFocus
+              />
+            </div>
+            {newCatName.trim() && (
+              <p className="text-xs text-muted-foreground font-body">Slug: <code className="bg-muted px-1 py-0.5 rounded">{generateSlug(newCatName)}</code></p>
+            )}
+            <div className="space-y-2">
+              <Label className="font-body">Category Image *</Label>
+              <div
+                className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors"
+                onClick={() => document.getElementById('cat-image-upload')?.click()}
+              >
+                {newCatImagePreview ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <img src={newCatImagePreview} alt="Preview" className="w-24 h-24 rounded-full object-cover border-2 border-border" />
+                    <p className="text-xs text-muted-foreground font-body">Click to change</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground font-body">Click to upload category image</p>
+                  </div>
+                )}
+                <input
+                  id="cat-image-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && handleCatImageSelect(e.target.files[0])}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewCatDialog(false)}>Cancel</Button>
+            <Button onClick={handleCreateCategory} disabled={creatingCat || !newCatName.trim() || !newCatImageFile}>
+              {creatingCat ? "Creating..." : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Navigation */}
       <div className="flex justify-between">

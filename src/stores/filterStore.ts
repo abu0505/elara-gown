@@ -24,7 +24,7 @@ interface FilterStore {
 
 export const useFilterStore = create<FilterStore>((set, get) => ({
   category: [],
-  priceRange: [0, 5000],
+  priceRange: [0, 15000],
   sizes: [],
   colors: [],
   discountMin: 0,
@@ -49,11 +49,11 @@ export const useFilterStore = create<FilterStore>((set, get) => ({
   setSortBy: (sort) => set({ sortBy: sort }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   clearFilters: () =>
-    set({ category: [], priceRange: [0, 5000], sizes: [], colors: [], discountMin: 0, sortBy: 'newest', searchQuery: '' }),
+    set({ category: [], priceRange: [0, 15000], sizes: [], colors: [], discountMin: 0, sortBy: 'newest', searchQuery: '' }),
   getActiveFilterCount: () => {
     const s = get();
     let count = s.category.length + s.sizes.length + s.colors.length;
-    if (s.priceRange[0] > 0 || s.priceRange[1] < 5000) count++;
+    if (s.priceRange[0] > 0 || s.priceRange[1] < 15000) count++;
     if (s.discountMin > 0) count++;
     return count;
   },
