@@ -679,6 +679,69 @@ export type Database = {
           },
         ]
       }
+      return_requests: {
+        Row: {
+          admin_note: string | null
+          created_at: string | null
+          exchange_size: string | null
+          id: string
+          images: string[] | null
+          order_id: string
+          order_item_id: string | null
+          reason: string
+          reason_detail: string | null
+          refund_amount: number | null
+          return_type: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string | null
+          exchange_size?: string | null
+          id?: string
+          images?: string[] | null
+          order_id: string
+          order_item_id?: string | null
+          reason: string
+          reason_detail?: string | null
+          refund_amount?: number | null
+          return_type?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string | null
+          exchange_size?: string | null
+          id?: string
+          images?: string[] | null
+          order_id?: string
+          order_item_id?: string | null
+          reason?: string
+          reason_detail?: string | null
+          refund_amount?: number | null
+          return_type?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "return_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "return_requests_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           body: string | null
@@ -859,6 +922,14 @@ export type Database = {
       }
     }
     Functions: {
+      decrement_stock: {
+        Args: { p_quantity: number; p_variant_id: string }
+        Returns: undefined
+      }
+      increment_stock: {
+        Args: { p_quantity: number; p_variant_id: string }
+        Returns: undefined
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_main_admin: { Args: { _user_id: string }; Returns: boolean }
     }
