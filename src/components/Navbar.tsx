@@ -73,10 +73,11 @@ export function Navbar({ onSearchOpen, onCartOpen }: NavbarProps) {
                   to={link.href}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    "px-6 py-3 text-base font-medium transition-colors hover:bg-secondary",
+                    "px-6 py-3 text-base font-medium transition-colors hover:bg-secondary flex items-center gap-3",
                     location.pathname === link.href && "text-primary bg-secondary"
                   )}
                 >
+                  <link.icon className="h-4 w-4" />
                   {link.label}
                 </Link>
               ))}

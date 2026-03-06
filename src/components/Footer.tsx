@@ -64,7 +64,7 @@ export function Footer() {
         <Accordion type="multiple" className="w-full">
           <AccordionItem value="quick"><AccordionTrigger className="text-sm font-heading">Quick Links</AccordionTrigger><AccordionContent><ul className="space-y-2">{quickLinks.map((l) => (<li key={l.label}><Link to={l.href} className="text-sm text-muted-foreground font-body">{l.label}</Link></li>))}</ul></AccordionContent></AccordionItem>
           <AccordionItem value="care"><AccordionTrigger className="text-sm font-heading">Customer Care</AccordionTrigger><AccordionContent><ul className="space-y-2">{customerCare.map((l) => (<li key={l.label}><Link to={l.href} className="text-sm text-muted-foreground font-body">{l.label}</Link></li>))}</ul></AccordionContent></AccordionItem>
-          <AccordionItem value="contact"><AccordionTrigger className="text-sm font-heading">Contact Us</AccordionTrigger><AccordionContent><ul className="space-y-2 text-sm text-muted-foreground font-body"><li>📍 Mumbai, Maharashtra</li><li>📞 +91 98765 43210</li><li>📧 hello@elara.store</li></ul></AccordionContent></AccordionItem>
+          <AccordionItem value="contact"><AccordionTrigger className="text-sm font-heading">Contact Us</AccordionTrigger><AccordionContent><ul className="space-y-2 text-sm text-muted-foreground font-body"><li className="flex items-center gap-2"><MapPin className="h-4 w-4" /> Mumbai, Maharashtra</li><li className="flex items-center gap-2"><PhoneIcon className="h-4 w-4" /> +91 98765 43210</li><li className="flex items-center gap-2"><Mail className="h-4 w-4" /> hello@elara.store</li></ul></AccordionContent></AccordionItem>
         </Accordion>
       </div>
       <Separator />

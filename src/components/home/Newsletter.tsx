@@ -12,7 +12,7 @@ export function Newsletter() {
       toast.error("Please enter a valid email address");
       return;
     }
-    toast.success("You're in! Check your inbox 🎉");
+    toast.success("You're in! Check your inbox for your welcome offer!");
     setEmail("");
   };
 
