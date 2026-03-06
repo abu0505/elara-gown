@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { products } from "@/data/products";
+import { products as hardcodedProducts } from "@/data/products";
 import { categories } from "@/data/categories";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SlidersHorizontal, X } from "lucide-react";
 import { useFilterStore, type SortOption } from "@/stores/filterStore";
+import { useAllProducts } from "@/hooks/useProducts";
 import { motion } from "framer-motion";
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
@@ -22,6 +23,9 @@ const Products = () => {
   const urlFilter = searchParams.get("filter");
   const urlSearch = searchParams.get("search");
 
+  const { data: dbProducts } = useAllProducts();
+  const allProducts = dbProducts || hardcodedProducts;
+
   const {
     category: filterCats, priceRange, sizes, sortBy,
     toggleCategory, setPriceRange, toggleSize, setSortBy, clearFilters, getActiveFilterCount,
@@ -32,7 +36,7 @@ const Products = () => {
   const activeCats = urlCategory ? [urlCategory] : filterCats;
 
   const filtered = useMemo(() => {
-    let result = [...products];
+    let result = [...allProducts];
 
     if (urlFilter === "new") result = result.filter((p) => p.isNew);
     if (urlSearch) {
@@ -52,7 +56,7 @@ const Products = () => {
     }
 
     return result;
-  }, [activeCats, priceRange, sizes, sortBy, urlFilter, urlSearch]);
+  }, [allProducts, activeCats, priceRange, sizes, sortBy, urlFilter, urlSearch]);
 
   const pageTitle = urlCategory
     ? categories.find((c) => c.id === urlCategory)?.name || "All Dresses"
@@ -67,10 +71,7 @@ const Products = () => {
         <div className="space-y-2">
           {categories.map((c) => (
             <label key={c.id} className="flex items-center gap-2 cursor-pointer">
-              <Checkbox
-                checked={activeCats.includes(c.id)}
-                onCheckedChange={() => toggleCategory(c.id)}
-              />
+              <Checkbox checked={activeCats.includes(c.id)} onCheckedChange={() => toggleCategory(c.id)} />
               <span className="text-sm font-body">{c.name}</span>
             </label>
           ))}
@@ -78,85 +79,50 @@ const Products = () => {
       </div>
       <div>
         <h4 className="text-sm font-semibold mb-3 font-body">Price Range</h4>
-        <Slider
-          value={priceRange}
-          onValueChange={(v) => setPriceRange(v as [number, number])}
-          min={0}
-          max={5000}
-          step={100}
-          className="mb-2"
-        />
+        <Slider value={priceRange} onValueChange={(v) => setPriceRange(v as [number, number])} min={0} max={5000} step={100} className="mb-2" />
         <div className="flex justify-between text-xs text-muted-foreground font-body">
-          <span>₹{priceRange[0]}</span>
-          <span>₹{priceRange[1]}</span>
+          <span>₹{priceRange[0]}</span><span>₹{priceRange[1]}</span>
         </div>
       </div>
       <div>
         <h4 className="text-sm font-semibold mb-3 font-body">Size</h4>
         <div className="flex flex-wrap gap-2">
           {SIZES.map((s) => (
-            <button
-              key={s}
-              onClick={() => toggleSize(s)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors font-body ${
-                sizes.includes(s)
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border hover:border-primary"
-              }`}
-            >
-              {s}
-            </button>
+            <button key={s} onClick={() => toggleSize(s)} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors font-body ${sizes.includes(s) ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary"}`}>{s}</button>
           ))}
         </div>
       </div>
-      <Button variant="outline" size="sm" onClick={clearFilters} className="w-full">
-        Clear All Filters
-      </Button>
+      <Button variant="outline" size="sm" onClick={clearFilters} className="w-full">Clear All Filters</Button>
     </div>
   );
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
       <div className="container py-4 md:py-8">
-        {/* Breadcrumb */}
         <nav className="text-xs text-muted-foreground mb-4 font-body">
-          <Link to="/" className="hover:text-primary">Home</Link>
-          <span className="mx-1">/</span>
-          <span className="text-foreground">{pageTitle}</span>
+          <Link to="/" className="hover:text-primary">Home</Link><span className="mx-1">/</span><span className="text-foreground">{pageTitle}</span>
         </nav>
 
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="font-heading text-xl md:text-2xl font-bold">{pageTitle}</h1>
-            <p className="text-xs text-muted-foreground font-body mt-1">
-              Showing {Math.min(visibleCount, filtered.length)} of {filtered.length} products
-            </p>
+            <p className="text-xs text-muted-foreground font-body mt-1">Showing {Math.min(visibleCount, filtered.length)} of {filtered.length} products</p>
           </div>
           <div className="flex items-center gap-2">
-            {/* Mobile filter trigger */}
             <Sheet>
               <SheetTrigger asChild className="md:hidden">
                 <Button variant="outline" size="sm" className="relative">
-                  <SlidersHorizontal className="h-4 w-4 mr-1" />
-                  Filter
-                  {filterCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
-                      {filterCount}
-                    </span>
-                  )}
+                  <SlidersHorizontal className="h-4 w-4 mr-1" />Filter
+                  {filterCount > 0 && <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">{filterCount}</span>}
                 </Button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-2xl">
-                <SheetHeader>
-                  <SheetTitle className="font-heading">Filters</SheetTitle>
-                </SheetHeader>
+                <SheetHeader><SheetTitle className="font-heading">Filters</SheetTitle></SheetHeader>
                 <FilterContent />
               </SheetContent>
             </Sheet>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-              <SelectTrigger className="w-[140px] h-9 text-xs">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
+              <SelectTrigger className="w-[140px] h-9 text-xs"><SelectValue placeholder="Sort by" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="newest">Newest First</SelectItem>
                 <SelectItem value="price_asc">Price: Low to High</SelectItem>
@@ -168,31 +134,15 @@ const Products = () => {
           </div>
         </div>
 
-        {/* Active filter chips */}
         {(activeCats.length > 0 || sizes.length > 0) && (
           <div className="flex flex-wrap gap-2 mb-4">
-            {activeCats.map((c) => (
-              <Badge key={c} variant="secondary" className="cursor-pointer gap-1 font-body" onClick={() => toggleCategory(c)}>
-                {categories.find((cat) => cat.id === c)?.name}
-                <X className="h-3 w-3" />
-              </Badge>
-            ))}
-            {sizes.map((s) => (
-              <Badge key={s} variant="secondary" className="cursor-pointer gap-1 font-body" onClick={() => toggleSize(s)}>
-                {s}
-                <X className="h-3 w-3" />
-              </Badge>
-            ))}
+            {activeCats.map((c) => (<Badge key={c} variant="secondary" className="cursor-pointer gap-1 font-body" onClick={() => toggleCategory(c)}>{categories.find((cat) => cat.id === c)?.name}<X className="h-3 w-3" /></Badge>))}
+            {sizes.map((s) => (<Badge key={s} variant="secondary" className="cursor-pointer gap-1 font-body" onClick={() => toggleSize(s)}>{s}<X className="h-3 w-3" /></Badge>))}
           </div>
         )}
 
         <div className="flex gap-8">
-          {/* Desktop sidebar */}
-          <aside className="hidden md:block w-56 flex-shrink-0">
-            <FilterContent />
-          </aside>
-
-          {/* Product grid */}
+          <aside className="hidden md:block w-56 flex-shrink-0"><FilterContent /></aside>
           <div className="flex-1">
             {filtered.length === 0 ? (
               <div className="text-center py-20">
@@ -203,15 +153,11 @@ const Products = () => {
             ) : (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-                  {filtered.slice(0, visibleCount).map((p) => (
-                    <ProductCard key={p.id} product={p} />
-                  ))}
+                  {filtered.slice(0, visibleCount).map((p) => (<ProductCard key={p.id} product={p} />))}
                 </div>
                 {visibleCount < filtered.length && (
                   <div className="text-center mt-8">
-                    <Button variant="outline" onClick={() => setVisibleCount((c) => c + ITEMS_PER_PAGE)}>
-                      Load More
-                    </Button>
+                    <Button variant="outline" onClick={() => setVisibleCount((c) => c + ITEMS_PER_PAGE)}>Load More</Button>
                   </div>
                 )}
               </>

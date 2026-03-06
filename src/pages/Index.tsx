@@ -5,16 +5,19 @@ import { PromoBanner } from "@/components/home/PromoBanner";
 import { TrustBadges } from "@/components/home/TrustBadges";
 import { LookbookStrip } from "@/components/home/LookbookStrip";
 import { Newsletter } from "@/components/home/Newsletter";
-import { getNewArrivals, getBestSellers } from "@/data/products";
+import { useNewArrivals, useBestSellers } from "@/hooks/useProducts";
 
 const Index = () => {
+  const { data: newArrivals } = useNewArrivals();
+  const { data: bestSellers } = useBestSellers();
+
   return (
     <div>
       <HeroCarousel />
       <CategoryGrid />
-      <ProductSection title="New Arrivals" products={getNewArrivals()} viewAllLink="/products?filter=new" />
+      <ProductSection title="New Arrivals" products={newArrivals || []} viewAllLink="/products?filter=new" />
       <PromoBanner />
-      <ProductSection title="Best Sellers" products={getBestSellers()} viewAllLink="/products" />
+      <ProductSection title="Best Sellers" products={bestSellers || []} viewAllLink="/products" />
       <TrustBadges />
       <LookbookStrip />
       <Newsletter />

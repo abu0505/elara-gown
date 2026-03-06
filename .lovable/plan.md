@@ -1,197 +1,177 @@
-# Phase 3 Implementation Plan — Bug Fixes, DB Connectivity, Order Features, Performance
+# Phase 2 Implementation Plan — Admin Panel, Database Schema, and Customer Pages
 
-## Summary of Changes
+## Current State
 
-This is a large implementation covering 6 areas: (1) order creation via edge function, (2) storefront reading products from Supabase, (3) coupon validation via edge function, (4) track order fix, (5) emoji removal, (6) new order cancel/return features, and (7) performance improvements.
+- Fully functional customer storefront with hardcoded product data (24 products, 6 categories)
+- Zustand stores for cart, wishlist, and filters
+- Pages: Home, Products, ProductDetail, Cart, Checkout, OrderSuccess
+- Supabase project connected but no tables exist yet
+- Theme: HSL-based Deep Rose primary (`340 82% 38%`), Inter + Playfair Display fonts
+
+## Scope
+
+This is a very large implementation. Given the constraint of doing it in a single phase, the work will be organized into logical batches executed sequentially.
 
 ---
 
-## Batch 1: Database Migration
+## Batch 1: Database Schema + Storage Buckets
 
-Create a single migration adding:
+Create all Supabase tables via migrations. Key adjustments from the PRD to follow best practices:
 
-- `return_requests` table with RLS
-- `increment_stock` and `decrement_stock` security definer functions
-- 10 performance indexes (products by category, featured, orders by status/phone/number, variants, coupons, images)
-- `customer_email` column already exists on `orders` table (verified in schema)
+**Admin roles**: Use a separate `admin_roles` table with a `security definer` function (`is_admin`) to avoid infinite recursion in RLS policies. The PRD's inline subquery approach (`SELECT role FROM admins WHERE...`) would cause recursive RLS issues.
 
-Note: RLS policies already exist on all relevant tables from Phase 2 (`orders_anon_insert`, `orders_anon_select`, `order_items_anon_insert`, `order_items_anon_select`, `products_public_read`, etc.). The current `RESTRICTIVE` policy type may be an issue — all existing policies use `Permissive: No` which means they are RESTRICTIVE, requiring ALL policies to pass. This needs investigation and likely fixing to PERMISSIVE for the anon insert/select policies.
+**Tables to create (14 total):**
 
-**Critical RLS fix**: The existing policies are all RESTRICTIVE (`Permissive: No`). For orders, this means the `orders_anon_insert` (WITH CHECK true) AND `orders_admin_all` must BOTH pass for an insert — which fails for anonymous users. Need to drop and recreate the anon policies as PERMISSIVE, or switch the approach to use an edge function with service role key (bypassing RLS entirely). The edge function approach is more secure and is what we'll use.
+1. `admins` — admin profiles linked to `auth.users`
+2. `admin_roles` — stores role per admin (main_admin / sub_admin)
+3. `categories` — product categories
+4. `products` — product catalog
+5. `product_variants` — size/color/stock per product
+6. `product_images` — image metadata
+7. `customers` — customer profiles
+8. `addresses` — customer addresses
+9. `coupons` — discount codes
+10. `orders` — order records with address snapshot
+11. `order_items` — line items per order
+12. `order_status_history` — status change log
+13. `reviews` — product reviews
+14. `support_tickets` — contact/support submissions
+15. `store_settings` — key-value store settings
+
+**Additional DB objects:**
+
+- `order_seq` sequence + `generate_order_number()` trigger
+- `daily_revenue` view
+- `inventory_summary` view
+- `is_admin()` security definer function
+- `is_main_admin()` security definer function
+
+**Storage buckets:**
+
+- `product-images` (public, WebP only, 50KB max)
+- `admin-avatars` (public, image/*, 200KB max)
+
+**RLS policies** on all tables using the security definer functions.
 
 ---
 
 ## Batch 2: Edge Functions
 
-### New Edge Functions:
+5 edge functions (all with `verify_jwt = false`, manual auth validation):
 
-1. `**create-order**` — Service role insert. Accepts customer info, shipping, items, pricing. Creates customer (upsert by email), order, order_items, decrements stock, increments coupon usage, logs initial status history. Returns `orderNumber` and `orderId`.
-2. `**cancel-order**` — Validates ownership via phone match, checks status is pending/confirmed, updates to cancelled, restores stock via `increment_stock`, logs status change.
-3. `**create-return-request**` — Validates order ownership, checks delivered status and 7-day window, inserts into `return_requests`.
-
-### Existing Edge Function Updates:
-
-4. `**validate-coupon**` — Already exists and looks correct. Add `coupon_id` to the response so the checkout can pass it to `create-order`. Also add per-user limit check.
-
-### Config:
-
-Update `supabase/config.toml` with `verify_jwt = false` for all new functions.
+1. `**create-admin-user**` — uses service role to create auth user + insert admin record
+2. `**delete-admin-user**` — uses service role to delete auth user
+3. `**validate-coupon**` — server-side coupon validation
+4. `**get-dashboard-stats**` — aggregated analytics by duration
+5. `**export-orders-csv**` — filtered order export
 
 ---
 
-## Batch 3: Checkout Flow Fix (Orders appearing in admin)
+## Batch 3: Image Compression Utility
 
-`**src/pages/Checkout.tsx**`:
-
-- Replace the current `onSubmit` (which just clears cart and navigates) with a call to `supabase.functions.invoke('create-order', { body: {...} })`
-- Pass customer info, shipping address, cart items, pricing (subtotal, discount, delivery, total, coupon)
-- On success: clear cart, navigate to `/checkout/success?order=ORDER_NUMBER`
-- On error: show toast, don't navigate
-
-`**src/pages/OrderSuccess.tsx**`:
-
-- Read order number from URL search params instead of generating random ID
-- Show real order number
-- Link "Track Your Order" to `/account/orders`
+- Create `src/utils/imageCompressor.ts` — client-side Canvas API compression to WebP < 50KB
+- No external libraries needed
 
 ---
 
-## Batch 4: Storefront Products from Supabase
+## Batch 4: Admin Auth + Layout
 
-Currently all storefront pages (`Index.tsx`, `Products.tsx`, `ProductDetail.tsx`) read from hardcoded `src/data/products.ts`. Need to add Supabase-backed queries while keeping hardcoded data as fallback.
-
-**Approach**: Create custom hooks that query Supabase products table with joins to images/variants/categories. If Supabase returns data, use it; otherwise fall back to hardcoded data. This way the storefront works whether DB has products or not.
-
-**Files to modify**:
-
-- `src/pages/Index.tsx` — Use hooks for featured products, new arrivals, best sellers
-- `src/pages/Products.tsx` — Query products from Supabase with filters
-- `src/pages/ProductDetail.tsx` — Query single product by slug/ID from Supabase
-- `src/components/home/ProductSection.tsx` — Accept products from props (already does)
-
-**New file**: `src/hooks/useProducts.ts` — Custom hooks wrapping React Query + Supabase queries for products.
+- **Admin login page** (`/admin/login`) — Supabase email/password auth, checks `admins` table + `is_active`
+- **Admin auth context/store** — Zustand store for admin session (profile, role)
+- **Admin layout shell** — dark sidebar (240px), top header, mobile drawer
+- **Route protection** — `RequireAdmin` and `RequireMainAdmin` wrapper components
+- **Admin sidebar nav** — Dashboard, Orders, Inventory, Coupons, Admin Management (main_admin only), Settings (main_admin only)
 
 ---
 
-## Batch 5: Coupon Fix
+## Batch 5: Admin Dashboard
 
-`**src/stores/cartStore.ts**`:
-
-- Remove hardcoded `COUPONS` map
-- Change `applyCoupon` to be async, call `validate-coupon` edge function
-- Store coupon result (id, code, discountAmount) in cart state
-- Update `getDiscount()` to return the server-calculated discount amount
-- Update `getDeliveryCharge()` to account for discount in free delivery threshold
-
-`**src/pages/Cart.tsx**`:
-
-- Make coupon apply handler async
-- Show loading state while validating
-- Display server error messages
+- Duration selector (Today / Week / Month / Year / Lifetime)
+- 4 KPI cards (Revenue, Orders, AOV, New Customers)
+- Revenue line chart (Recharts)
+- Orders by status donut chart
+- Top selling products bar chart
+- Revenue by category bar chart
+- Recent orders table (last 10)
+- Low stock alerts
+- Quick stats row
 
 ---
 
-## Batch 6: Track Order Fix
+## Batch 6: Admin Order Management
 
-`**src/pages/OrderLookup.tsx**`:
-
-- Already queries Supabase correctly with `order_number` + `customer_phone`
-- The issue is the query uses `customer_phone` but the orders table stores phone in `shipping_phone` field AND `customer_phone` field
-- Fix: query by `order_number` + match against both phone fields, or use the edge function approach
-- Add proper status timeline component with Lucide icons
-
----
-
-## Batch 7: Emoji Removal
-
-Replace all emoji characters with Lucide icons across these files:
-
-
-| File                | Emojis to Replace                 |
-| ------------------- | --------------------------------- |
-| `Navbar.tsx`        | 🏠👗🆕🔥🎉📦🔄📞ℹ️ in mobile menu |
-| `Footer.tsx`        | 📍📞📧 in contact section         |
-| `PromoBanner.tsx`   | 🎉                                |
-| `Newsletter.tsx`    | 🎉 in toast                       |
-| `ProductDetail.tsx` | ✅🔄💵 in delivery section         |
-| `OrderSuccess.tsx`  | 🎉 in heading                     |
-| `Contact.tsx`       | ✅ in toast                        |
-| `Cart.tsx`          | 🗑️ in toast                      |
-| `ProductForm.tsx`   | ✅ in compression stats            |
-
+- Orders list with search, filters (status, date, delivery type, payment), sorting, pagination
+- Inline status update via dropdown
+- Order detail page with status timeline, customer/shipping info, items table, admin notes
+- CSV export via edge function
+- Bulk actions (status update, export)
 
 ---
 
-## Batch 8: Cancel & Return Order Features
+## Batch 7: Admin Inventory Management
 
-**Cancel Order** (in `OrderLookup.tsx` order detail view):
-
-- Show "Cancel Order" button when status is `pending` or `confirmed`
-- Confirmation dialog with reason selection (radio: Ordered by mistake, Found better price, Changed mind, Delivery too long, Other)
-- Calls `cancel-order` edge function
-- Updates UI on success
-
-**Return Order** (in `OrderLookup.tsx` order detail view):
-
-- Show "Return / Exchange" button when status is `delivered` and within 7 days
-- Dialog with item selection checkboxes, return type (return/exchange), reason, optional photo upload
-- Calls `create-return-request` edge function
-
-**Admin Order Detail** (`src/pages/admin/OrderDetail.tsx`):
-
-- Add return requests section showing linked return_requests for the order
-- Admin can approve/reject, update status, add notes
+- Products table with search, filter, sort, status toggle
+- 4-step Add/Edit Product form:
+  1. Basic info (name, slug, category, description, material, fit, occasion, toggles)
+  2. Pricing (base price, sale price, auto discount %)
+  3. Images (drag-drop upload with compression feedback UI)
+  4. Variants (color management + stock matrix grid)
+- Delete product (soft delete, hard delete for main_admin)
 
 ---
 
-## Batch 9: Performance
+## Batch 8: Admin Coupons + Admin Management + Settings
 
-- Configure `QueryClient` with `staleTime: 5min`, `gcTime: 10min`, `refetchOnWindowFocus: false`
-- Add React Query hooks for all Supabase data fetching
-- Homepage: limit queries to 8 products per section
-- Products page: paginated with Load More (12 per page)
-- Search: already has debounce in SearchOverlay
-- Admin dashboard: keep existing direct queries (already functional)
-- Supabase realtime for new orders in admin panel
+- **Coupons**: CRUD table + create/edit modal, inline analytics expand
+- **Admin Management** (main_admin only): admin users table, add sub-admin (via edge function), edit, delete
+- **Settings** (main_admin only): store info, delivery settings, social links, Razorpay placeholder
 
 ---
 
-## File Change Summary
+## Batch 9: Customer-Facing Pages (10 pages)
 
-**New files (~10)**:
+All using existing brand theme, Navbar, Footer:
 
-- `supabase/migrations/...phase3.sql` (migration)
-- `supabase/functions/create-order/index.ts`
-- `supabase/functions/cancel-order/index.ts`
-- `supabase/functions/create-return-request/index.ts`
-- `src/hooks/useProducts.ts`
+1. `/account/orders` — Guest order lookup (order# + phone)
+2. `/about` — Hero, story, values, numbers, CTA
+3. `/contact` — Contact form (inserts to `support_tickets`) + contact info
+4. `/faq` — Accordion FAQ sections
+5. `/size-guide` — Measurement chart + guide
+6. `/returns` — Return policy content
+7. `/shipping` — Shipping info content
+8. `/privacy-policy` — Privacy policy content
+9. `/terms` — Terms & conditions content
+10. `/support` — Help center with search, quick action cards, embedded FAQ + contact form
 
-**Modified files (~15)**:
+---
 
-- `supabase/config.toml` (add function configs)
-- `src/pages/Checkout.tsx` (order creation via edge function)
-- `src/pages/OrderSuccess.tsx` (real order number)
-- `src/pages/Index.tsx` (Supabase product queries)
-- `src/pages/Products.tsx` (Supabase queries with filters)
-- `src/pages/ProductDetail.tsx` (Supabase query + emoji removal)
-- `src/pages/Cart.tsx` (async coupon + emoji removal)
-- `src/pages/OrderLookup.tsx` (fix query + cancel/return UI)
-- `src/stores/cartStore.ts` (async coupon validation)
-- `src/components/Navbar.tsx` (emoji removal)
-- `src/components/Footer.tsx` (emoji removal)
-- `src/components/home/PromoBanner.tsx` (emoji removal)
-- `src/components/home/Newsletter.tsx` (emoji removal)
-- `src/pages/Contact.tsx` (emoji removal)
-- `src/pages/admin/OrderDetail.tsx` (return requests section)
-- `src/pages/admin/ProductForm.tsx` (emoji removal)
-- `src/App.tsx` (QueryClient config)
-- `supabase/functions/validate-coupon/index.ts` (add coupon_id to response)
+## Batch 10: Navigation & Footer Updates + Routing
 
-&nbsp;
+- Update Footer with all new page links
+- Update mobile hamburger menu
+- Add all new routes to `App.tsx`
+- Enable Supabase realtime on `orders` and `support_tickets` tables
 
-After makign these test these areas end to end:  
+---
+
+## Technical Decisions
 
 
-- Test the admin panel by logging in and exploring the dashboard, orders, inventory, and coupon pages (admin credentials: [admin@elara.com](mailto:admin@elara.com) , pass:- Elara@admin_2026)
-- Test the storefront end-to-end: browse products, add to cart, go through checkout, then check the About, FAQ, and Contact pages
-- Check the mobile experience at 375px width — bottom nav, hamburger menu, and all new customer pages
+| Decision            | Approach                                                                                                            |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Admin roles         | Separate `admin_roles` table + `is_admin()` / `is_main_admin()` security definer functions to prevent RLS recursion |
+| Admin user creation | Edge function with service role key (never exposed client-side)                                                     |
+| Image compression   | Client-side Canvas API, no external library                                                                         |
+| Charts              | Recharts (already installed)                                                                                        |
+| Admin state         | Zustand store for admin session                                                                                     |
+| Color theme         | Keep existing HSL variables (`340 82% 38%` primary), add admin sidebar dark colors as Tailwind utilities            |
+| Realtime            | Supabase channels for new order notifications in admin                                                              |
+| Customer auth       | Not implemented (Phase 3), guest order lookup only                                                                  |
+
+
+## Files to Create/Modify (estimated 50+ files)
+
+**New files:** ~45 component/page files, 5 edge functions, 1 utility, 1 admin store, 1 admin auth context
+**Modified files:** `App.tsx` (routes), `Footer.tsx` (links), `Navbar.tsx` (menu links), `supabase/config.toml` (edge function configs)
+
+(Delete the entire functionality related to wishlist i don't want wishlist feature in website entirely delete backend, frontend, database, each and everything related to wishlist)

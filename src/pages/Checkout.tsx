@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useCartStore } from "@/stores/cartStore";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,9 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, Lock, Check } from "lucide-react";
+import { ChevronDown, Lock, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 const STATES = [
   "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana",
@@ -47,8 +49,9 @@ const steps = [
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { items, getSubtotal, getDeliveryCharge, getDiscount, getTotal, clearCart } = useCartStore();
+  const { items, getSubtotal, getDeliveryCharge, getDiscount, getTotal, clearCart, couponCode, couponApplied } = useCartStore();
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [placing, setPlacing] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -57,11 +60,61 @@ const Checkout = () => {
 
   const delivery = watch("delivery");
 
-  const onSubmit = () => {
-    // TODO: Phase 2 - Razorpay Integration
-    // Replace with: create Razorpay order → open checkout → verify payment
-    clearCart();
-    navigate("/checkout/success");
+  const onSubmit = async (data: FormData) => {
+    setPlacing(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke('create-order', {
+        body: {
+          customer: {
+            name: data.name,
+            email: data.email,
+            phone: data.mobile,
+          },
+          shipping: {
+            name: data.name,
+            address1: data.address1,
+            address2: data.address2 || "",
+            landmark: data.landmark || "",
+            city: data.city,
+            state: data.state,
+            pincode: data.pincode,
+          },
+          items: items.map(item => ({
+            product_id: item.productId,
+            variant_id: item.variantId || null,
+            product_name: item.name,
+            product_image: item.image,
+            size: item.size,
+            color_name: item.colorName,
+            color_hex: item.color,
+            unit_price: item.price,
+            quantity: item.quantity,
+            line_total: item.price * item.quantity,
+          })),
+          pricing: {
+            subtotal: getSubtotal(),
+            discount_amount: getDiscount(),
+            delivery_charge: getDeliveryCharge(),
+            total_amount: getTotal(),
+            coupon_code: couponCode || null,
+            coupon_id: couponApplied?.id || null,
+          },
+          delivery_type: data.delivery,
+        },
+      });
+
+      if (error || !result?.success) {
+        toast.error(result?.error || 'Failed to place order. Please try again.');
+        setPlacing(false);
+        return;
+      }
+
+      clearCart();
+      navigate(`/checkout/success?order=${result.orderNumber}`);
+    } catch (err: any) {
+      toast.error('Something went wrong. Please try again.');
+      setPlacing(false);
+    }
   };
 
   if (items.length === 0) {
@@ -196,14 +249,13 @@ const Checkout = () => {
               </RadioGroup>
             </section>
 
-            <Button type="submit" className="w-full h-12 text-base">
-              <Lock className="h-4 w-4 mr-2" /> Place Order
+            <Button type="submit" className="w-full h-12 text-base" disabled={placing}>
+              {placing ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Placing Order...</> : <><Lock className="h-4 w-4 mr-2" /> Place Order</>}
             </Button>
           </form>
 
           {/* Order summary */}
           <div className="md:col-span-2">
-            {/* Mobile collapsible */}
             <div className="md:hidden mb-6">
               <Collapsible open={summaryOpen} onOpenChange={setSummaryOpen}>
                 <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-lg border border-border">
@@ -218,7 +270,6 @@ const Checkout = () => {
                 </CollapsibleContent>
               </Collapsible>
             </div>
-            {/* Desktop always visible */}
             <div className="hidden md:block sticky top-20">
               <OrderSummaryContent />
             </div>

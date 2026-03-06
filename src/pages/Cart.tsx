@@ -3,21 +3,23 @@ import { useCartStore } from "@/stores/cartStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, ShoppingBag, Lock, Tag } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, Lock, Tag, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 const Cart = () => {
-  const { items, updateQuantity, removeItem, getSubtotal, getDeliveryCharge, getDiscount, getTotal, applyCoupon, removeCoupon, couponCode } = useCartStore();
+  const { items, updateQuantity, removeItem, getSubtotal, getDeliveryCharge, getDiscount, getTotal, applyCoupon, removeCoupon, couponCode, couponLoading, couponError } = useCartStore();
   const [couponInput, setCouponInput] = useState("");
 
-  const handleApplyCoupon = () => {
-    if (applyCoupon(couponInput)) {
+  const handleApplyCoupon = async () => {
+    const success = await applyCoupon(couponInput);
+    if (success) {
       toast.success(`Coupon ${couponInput.toUpperCase()} applied!`);
       setCouponInput("");
     } else {
-      toast.error("Invalid coupon code");
+      const error = useCartStore.getState().couponError;
+      toast.error(error || "Invalid coupon code");
     }
   };
 
@@ -49,7 +51,7 @@ const Cart = () => {
                       <h3 className="text-sm font-medium font-body line-clamp-1">{item.name}</h3>
                       <p className="text-xs text-muted-foreground font-body mt-0.5">{item.colorName} · Size {item.size}</p>
                     </div>
-                    <button onClick={() => { removeItem(item.id); toast("🗑️ Removed from cart"); }} aria-label="Remove">
+                    <button onClick={() => { removeItem(item.id); toast("Removed from cart"); }} aria-label="Remove">
                       <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
                     </button>
                   </div>
@@ -96,16 +98,19 @@ const Cart = () => {
                   <button onClick={removeCoupon} className="text-xs text-destructive font-body">Remove</button>
                 </div>
               ) : (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter code"
-                    value={couponInput}
-                    onChange={(e) => setCouponInput(e.target.value)}
-                    className="flex-1 h-9"
-                  />
-                  <Button size="sm" onClick={handleApplyCoupon} disabled={!couponInput}>
-                    Apply
-                  </Button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter code"
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value)}
+                      className="flex-1 h-9"
+                    />
+                    <Button size="sm" onClick={handleApplyCoupon} disabled={!couponInput || couponLoading}>
+                      {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                    </Button>
+                  </div>
+                  {couponError && <p className="text-xs text-destructive font-body">{couponError}</p>}
                 </div>
               )}
             </div>

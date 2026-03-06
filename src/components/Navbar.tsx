@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, ShoppingBag, Menu } from "lucide-react";
+import { Search, ShoppingBag, Menu, Home, Shirt, Sparkles, Flame, Tag, Package, RefreshCw, Phone, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useCartStore } from "@/stores/cartStore";
@@ -14,15 +14,15 @@ const navLinks = [
 ];
 
 const mobileMenuLinks = [
-  { label: "🏠 Home", href: "/" },
-  { label: "👗 Shop All", href: "/products" },
-  { label: "🆕 New Arrivals", href: "/products?filter=new" },
-  { label: "🔥 Best Sellers", href: "/products?filter=bestseller" },
-  { label: "🎉 Sale", href: "/products?category=sale" },
-  { label: "📦 Track My Order", href: "/account/orders" },
-  { label: "🔄 Returns", href: "/returns" },
-  { label: "📞 Contact Us", href: "/contact" },
-  { label: "ℹ️ About Us", href: "/about" },
+  { label: "Home", href: "/", icon: Home },
+  { label: "Shop All", href: "/products", icon: Shirt },
+  { label: "New Arrivals", href: "/products?filter=new", icon: Sparkles },
+  { label: "Best Sellers", href: "/products?filter=bestseller", icon: Flame },
+  { label: "Sale", href: "/products?category=sale", icon: Tag },
+  { label: "Track My Order", href: "/account/orders", icon: Package },
+  { label: "Returns", href: "/returns", icon: RefreshCw },
+  { label: "Contact Us", href: "/contact", icon: Phone },
+  { label: "About Us", href: "/about", icon: Info },
 ];
 
 interface NavbarProps {
@@ -73,10 +73,11 @@ export function Navbar({ onSearchOpen, onCartOpen }: NavbarProps) {
                   to={link.href}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    "px-6 py-3 text-base font-medium transition-colors hover:bg-secondary",
+                    "px-6 py-3 text-base font-medium transition-colors hover:bg-secondary flex items-center gap-3",
                     location.pathname === link.href && "text-primary bg-secondary"
                   )}
                 >
+                  <link.icon className="h-4 w-4" />
                   {link.label}
                 </Link>
               ))}

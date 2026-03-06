@@ -352,7 +352,7 @@ const ProductForm = () => {
                     {img.sizeKB && (
                       <div className="absolute bottom-0 left-0 right-0 bg-background/90 px-2 py-1">
                         <p className="text-[10px] font-body text-muted-foreground">
-                          {img.originalSizeKB}KB → {img.sizeKB}KB ({img.compressionRatio}) ✅
+                          {img.originalSizeKB}KB → {img.sizeKB}KB ({img.compressionRatio})
                         </p>
                       </div>
                     )}

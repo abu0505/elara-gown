@@ -27,7 +27,7 @@ const Contact = () => {
     setSending(true);
     const { error } = await supabase.from('support_tickets').insert({ name, email, phone, order_number: orderNumber, subject, message });
     if (error) { toast.error("Failed to send. Please try again."); } else {
-      toast.success("Message sent! We'll get back to you within 24 hours ✅");
+      toast.success("Message sent! We'll get back to you within 24 hours.");
       setName(""); setEmail(""); setPhone(""); setOrderNumber(""); setSubject(""); setMessage("");
     }
     setSending(false);
