@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface CartItem {
   id: string;
@@ -11,17 +12,29 @@ export interface CartItem {
   color: string;
   colorName: string;
   quantity: number;
+  variantId?: string;
+}
+
+interface CouponApplied {
+  id: string;
+  code: string;
+  discountType: string;
+  discountValue: number;
+  discountAmount: number;
+  maxCap: number | null;
 }
 
 interface CartStore {
   items: CartItem[];
   couponCode: string | null;
-  discount: number;
+  couponApplied: CouponApplied | null;
+  couponLoading: boolean;
+  couponError: string | null;
   addItem: (item: Omit<CartItem, 'id'>) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
-  applyCoupon: (code: string) => boolean;
+  applyCoupon: (code: string) => Promise<boolean>;
   removeCoupon: () => void;
   getTotalItems: () => number;
   getSubtotal: () => number;
@@ -30,15 +43,12 @@ interface CartStore {
   getTotal: () => number;
 }
 
-const COUPONS: Record<string, number> = {
-  DRESS30: 30,
-  FIRST10: 10,
-};
-
 export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
   couponCode: null,
-  discount: 0,
+  couponApplied: null,
+  couponLoading: false,
+  couponError: null,
 
   addItem: (item) => {
     const existing = get().items.find(
@@ -62,28 +72,71 @@ export const useCartStore = create<CartStore>((set, get) => ({
     set({ items: get().items.map((i) => (i.id === id ? { ...i, quantity: Math.min(quantity, 10) } : i)) });
   },
 
-  clearCart: () => set({ items: [], couponCode: null, discount: 0 }),
+  clearCart: () => set({ items: [], couponCode: null, couponApplied: null, couponLoading: false, couponError: null }),
 
-  applyCoupon: (code) => {
-    const upper = code.toUpperCase();
-    if (COUPONS[upper]) {
-      set({ couponCode: upper, discount: COUPONS[upper] });
+  applyCoupon: async (code: string) => {
+    set({ couponLoading: true, couponError: null });
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-coupon', {
+        body: {
+          code: code.trim().toUpperCase(),
+          order_amount: get().getSubtotal(),
+        },
+      });
+
+      if (error) {
+        set({ couponLoading: false, couponError: 'Failed to validate coupon' });
+        return false;
+      }
+
+      if (!data.valid) {
+        set({ couponLoading: false, couponError: data.message || 'Invalid coupon', couponApplied: null, couponCode: null });
+        return false;
+      }
+
+      set({
+        couponLoading: false,
+        couponError: null,
+        couponCode: code.trim().toUpperCase(),
+        couponApplied: {
+          id: data.couponId,
+          code: code.trim().toUpperCase(),
+          discountType: data.discountType,
+          discountValue: data.discountValue,
+          discountAmount: data.discountAmount,
+          maxCap: data.maxCap,
+        },
+      });
       return true;
+    } catch {
+      set({ couponLoading: false, couponError: 'Failed to validate coupon' });
+      return false;
     }
-    return false;
   },
 
-  removeCoupon: () => set({ couponCode: null, discount: 0 }),
+  removeCoupon: () => set({ couponCode: null, couponApplied: null, couponError: null }),
 
   getTotalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
 
   getSubtotal: () => get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
 
-  getDeliveryCharge: () => (get().getSubtotal() >= 599 ? 0 : 49),
+  getDeliveryCharge: () => {
+    const subtotal = get().getSubtotal();
+    const discount = get().getDiscount();
+    return (subtotal - discount) >= 599 ? 0 : 49;
+  },
 
   getDiscount: () => {
-    const { discount } = get();
-    return discount > 0 ? Math.round(get().getSubtotal() * (discount / 100)) : 0;
+    const { couponApplied } = get();
+    if (!couponApplied) return 0;
+    // Recalculate based on current subtotal
+    const subtotal = get().items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    if (couponApplied.discountType === 'flat') {
+      return Math.min(couponApplied.discountValue, subtotal);
+    }
+    let discount = (subtotal * couponApplied.discountValue) / 100;
+    if (couponApplied.maxCap) discount = Math.min(discount, couponApplied.maxCap);
+    return Math.round(discount);
   },
 
   getTotal: () => get().getSubtotal() + get().getDeliveryCharge() - get().getDiscount(),
