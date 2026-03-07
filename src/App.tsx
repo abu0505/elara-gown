@@ -22,6 +22,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import Support from "./pages/Support";
 import OrderLookup from "./pages/OrderLookup";
+import ReturnRequest from "./pages/ReturnRequest";
 import AdminLogin from "./pages/admin/AdminLogin";
 import Dashboard from "./pages/admin/Dashboard";
 import Orders from "./pages/admin/Orders";
@@ -29,7 +30,7 @@ import OrderDetail from "./pages/admin/OrderDetail";
 import Inventory from "./pages/admin/Inventory";
 import ProductForm from "./pages/admin/ProductForm";
 import Coupons from "./pages/admin/Coupons";
-import AdminManagement from "./pages/admin/AdminManagement";
+import AdminReturns from "./pages/admin/Returns";
 import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/faq" element={<FAQ />} />
             <Route path="/size-guide" element={<SizeGuide />} />
             <Route path="/returns" element={<Returns />} />
+            <Route path="/returns/request" element={<ReturnRequest />} />
             <Route path="/shipping" element={<Shipping />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<Terms />} />
@@ -78,7 +80,7 @@ const App = () => (
             <Route path="inventory/new" element={<ProductForm />} />
             <Route path="inventory/:productId/edit" element={<ProductForm />} />
             <Route path="coupons" element={<Coupons />} />
-            <Route path="admins" element={<RequireMainAdmin><AdminManagement /></RequireMainAdmin>} />
+            <Route path="returns" element={<AdminReturns />} />
             <Route path="settings" element={<RequireMainAdmin><AdminSettings /></RequireMainAdmin>} />
           </Route>
           <Route path="*" element={<NotFound />} />

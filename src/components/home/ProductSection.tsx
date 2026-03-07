@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ProductCard } from "@/components/ProductCard";
-import type { Product } from "@/data/products";
+import type { Product } from "@/hooks/useProducts";
 
 interface ProductSectionProps {
   title: string;
