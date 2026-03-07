@@ -15,9 +15,9 @@ const Index = () => {
     <div>
       <HeroCarousel />
       <CategoryGrid />
-      <ProductSection title="New Arrivals" products={newArrivals || []} viewAllLink="/products?filter=new" />
       <PromoBanner />
-      <ProductSection title="Best Sellers" products={bestSellers || []} viewAllLink="/products" />
+      <ProductSection title="New Arrivals" products={newArrivals || []} viewAllLink="/products?filter=new_arrival" />
+      <ProductSection title="Best Sellers" products={bestSellers || []} viewAllLink="/products?filter=best_seller" />
       <TrustBadges />
       <LookbookStrip />
       <Newsletter />
