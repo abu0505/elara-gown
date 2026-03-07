@@ -492,6 +492,7 @@ export type Database = {
       }
       product_images: {
         Row: {
+          color_hex: string | null
           created_at: string | null
           height: number | null
           id: string
@@ -504,6 +505,7 @@ export type Database = {
           width: number | null
         }
         Insert: {
+          color_hex?: string | null
           created_at?: string | null
           height?: number | null
           id?: string
@@ -516,6 +518,7 @@ export type Database = {
           width?: number | null
         }
         Update: {
+          color_hex?: string | null
           created_at?: string | null
           height?: number | null
           id?: string
@@ -691,6 +694,7 @@ export type Database = {
           reason: string
           reason_detail: string | null
           refund_amount: number | null
+          return_number: string | null
           return_type: string
           status: string
           updated_at: string | null
@@ -706,6 +710,7 @@ export type Database = {
           reason: string
           reason_detail?: string | null
           refund_amount?: number | null
+          return_number?: string | null
           return_type?: string
           status?: string
           updated_at?: string | null
@@ -721,6 +726,7 @@ export type Database = {
           reason?: string
           reason_detail?: string | null
           refund_amount?: number | null
+          return_number?: string | null
           return_type?: string
           status?: string
           updated_at?: string | null
@@ -746,40 +752,49 @@ export type Database = {
         Row: {
           body: string | null
           created_at: string | null
+          customer_email: string | null
           customer_id: string | null
+          customer_name: string | null
           id: string
           is_approved: boolean | null
           is_verified: boolean | null
           order_id: string | null
+          order_number: string | null
           product_id: string
           rating: number
-          reviewer_name: string
+          reviewer_name: string | null
           title: string | null
         }
         Insert: {
           body?: string | null
           created_at?: string | null
+          customer_email?: string | null
           customer_id?: string | null
+          customer_name?: string | null
           id?: string
           is_approved?: boolean | null
           is_verified?: boolean | null
           order_id?: string | null
+          order_number?: string | null
           product_id: string
           rating: number
-          reviewer_name: string
+          reviewer_name?: string | null
           title?: string | null
         }
         Update: {
           body?: string | null
           created_at?: string | null
+          customer_email?: string | null
           customer_id?: string | null
+          customer_name?: string | null
           id?: string
           is_approved?: boolean | null
           is_verified?: boolean | null
           order_id?: string | null
+          order_number?: string | null
           product_id?: string
           rating?: number
-          reviewer_name?: string
+          reviewer_name?: string | null
           title?: string | null
         }
         Relationships: [
@@ -925,6 +940,18 @@ export type Database = {
       decrement_stock: {
         Args: { p_quantity: number; p_variant_id: string }
         Returns: undefined
+      }
+      get_product_rating_stats: {
+        Args: { p_product_id: string }
+        Returns: {
+          avg_rating: number
+          review_count: number
+          stars_1: number
+          stars_2: number
+          stars_3: number
+          stars_4: number
+          stars_5: number
+        }[]
       }
       increment_stock: {
         Args: { p_quantity: number; p_variant_id: string }
