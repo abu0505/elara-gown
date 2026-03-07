@@ -92,7 +92,7 @@ export function AdminLayout() {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 md:ml-60">
+      <div className="flex-1 md:ml-60 min-w-0 overflow-x-hidden">
         {/* Top header */}
         <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border h-14 flex items-center px-4 md:px-6 gap-3">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>

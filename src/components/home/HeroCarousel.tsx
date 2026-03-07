@@ -44,7 +44,7 @@ export function HeroCarousel() {
 
   return (
     <div
-      className="relative w-full h-[75vh] md:h-[85vh] overflow-hidden"
+      className="relative w-full h-[65vh] md:h-[75vh] overflow-hidden"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={() => setPaused(true)}

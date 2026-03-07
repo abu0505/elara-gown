@@ -94,7 +94,7 @@ export function useAllProducts() {
         .order("created_at", { ascending: false });
 
       if (error || !data || data.length === 0) {
-        return hardcodedProducts;
+        return [];
       }
       return (data as unknown as SupabaseProduct[]).map(toStorefrontProduct);
     },
@@ -115,7 +115,7 @@ export function useFeaturedProducts() {
         .limit(8);
 
       if (error || !data || data.length === 0) {
-        return getBestSellers().slice(0, 8);
+        return [];
       }
       return (data as unknown as SupabaseProduct[]).map(toStorefrontProduct);
     },
@@ -136,7 +136,7 @@ export function useNewArrivals() {
         .limit(8);
 
       if (error || !data || data.length === 0) {
-        return getNewArrivals().slice(0, 8);
+        return [];
       }
       return (data as unknown as SupabaseProduct[]).map(toStorefrontProduct);
     },
@@ -157,7 +157,7 @@ export function useBestSellers() {
         .limit(8);
 
       if (error || !data || data.length === 0) {
-        return getBestSellers().slice(0, 8);
+        return [];
       }
       return (data as unknown as SupabaseProduct[]).map(toStorefrontProduct);
     },
@@ -196,8 +196,7 @@ export function useProductDetail(productId: string | undefined) {
         return toStorefrontProduct(result as unknown as SupabaseProduct);
       }
 
-      // Fallback to hardcoded
-      return getHardcodedProduct(productId) || null;
+      return null;
     },
     enabled: !!productId,
     staleTime: 1000 * 60 * 5,

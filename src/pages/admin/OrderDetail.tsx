@@ -133,7 +133,7 @@ const OrderDetail = () => {
       <Card>
         <CardHeader><CardTitle className="text-sm font-body">Order Items</CardTitle></CardHeader>
         <CardContent>
-          <Table>
+          <div className="overflow-x-auto"><Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="font-body text-xs">Product</TableHead>
@@ -166,7 +166,7 @@ const OrderDetail = () => {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+          </Table></div>
           <Separator className="my-4" />
           <div className="space-y-1 text-sm font-body text-right">
             <p>Subtotal: ₹{Number(order.subtotal).toLocaleString()}</p>

@@ -66,7 +66,7 @@ const Inventory = () => {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
+          <div className="overflow-x-auto"><Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="font-body text-xs w-[60px]">Image</TableHead>
@@ -134,7 +134,7 @@ const Inventory = () => {
                 );
               })}
             </TableBody>
-          </Table>
+          </Table></div>
         </CardContent>
       </Card>
 

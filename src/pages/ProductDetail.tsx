@@ -22,7 +22,6 @@ const ProductDetail = () => {
 
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState(0);
-  const [quantity, setQuantity] = useState(1);
   const [currentImage, setCurrentImage] = useState(0);
   const [showAllReviews, setShowAllReviews] = useState(false);
 
@@ -57,7 +56,7 @@ const ProductDetail = () => {
       size: selectedSize,
       color: product.colors[selectedColor].hex,
       colorName: product.colors[selectedColor].name,
-      quantity,
+      quantity: 1,
     });
     toast.success("Added to cart!");
   };
@@ -99,16 +98,19 @@ const ProductDetail = () => {
           {/* Product info */}
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground font-body">{product.brand}</p>
-              <h1 className="font-heading text-2xl md:text-3xl font-bold">{product.name}</h1>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="flex items-center gap-0.5">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star key={s} className={cn("h-4 w-4", s <= Math.round(product.rating) ? "fill-accent text-accent" : "text-border")} />
-                  ))}
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-sm text-muted-foreground font-body">{product.brand}</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star key={s} className={cn("h-4 w-4", s <= Math.round(product.rating) ? "fill-accent text-accent" : "text-border")} />
+                    ))}
+                  </div>
+                  <span className="text-sm text-muted-foreground font-body">{product.rating} ({product.reviewCount} reviews)</span>
                 </div>
-                <span className="text-sm text-muted-foreground font-body">{product.rating} ({product.reviewCount} reviews)</span>
               </div>
+              <h1 className="font-heading text-2xl md:text-3xl font-bold">{product.name}</h1>
+              <p className="text-sm text-muted-foreground font-body mt-2">{product.description}</p>
             </div>
 
             <div className="flex items-baseline gap-3">
@@ -121,11 +123,25 @@ const ProductDetail = () => {
               )}
             </div>
             <p className="text-xs text-muted-foreground font-body">Inclusive of all taxes</p>
-            <p className="text-xs text-muted-foreground font-body flex items-center gap-1">
-              <Truck className="h-3 w-3" /> Estimated delivery: 3–5 business days
-            </p>
+            <div className="flex flex-col gap-1.5">
+              <p className="text-xs text-muted-foreground font-body flex items-center gap-1">
+                <Truck className="h-3 w-3" /> Estimated delivery: 3–5 business days
+              </p>
+              <p className="text-xs text-muted-foreground font-body flex items-center gap-1">
+                <CheckCircle className="h-3 w-3 text-success flex-shrink-0" /> Free delivery on orders above ₹599
+              </p>
+            </div>
 
             <Separator />
+
+            <div>
+              <h3 className="text-sm font-semibold font-body mb-2">Color: <span className="font-normal text-muted-foreground">{product.colors[selectedColor].name}</span></h3>
+              <div className="flex gap-2">
+                {product.colors.map((c, i) => (
+                  <button key={i} onClick={() => setSelectedColor(i)} className={cn("h-8 w-8 rounded-full border-2 transition-all", i === selectedColor ? "border-primary ring-2 ring-primary/30 scale-110" : "border-border")} style={{ backgroundColor: c.hex }} aria-label={c.name} />
+                ))}
+              </div>
+            </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -143,24 +159,6 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            <div>
-              <h3 className="text-sm font-semibold font-body mb-2">Color: <span className="font-normal text-muted-foreground">{product.colors[selectedColor].name}</span></h3>
-              <div className="flex gap-2">
-                {product.colors.map((c, i) => (
-                  <button key={i} onClick={() => setSelectedColor(i)} className={cn("h-8 w-8 rounded-full border-2 transition-all", i === selectedColor ? "border-primary ring-2 ring-primary/30 scale-110" : "border-border")} style={{ backgroundColor: c.hex }} aria-label={c.name} />
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-semibold font-body mb-2">Quantity</h3>
-              <div className="flex items-center gap-3">
-                <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="h-9 w-9 rounded-lg border border-border flex items-center justify-center" aria-label="Decrease"><Minus className="h-4 w-4" /></button>
-                <span className="w-6 text-center font-medium font-body">{quantity}</span>
-                <button onClick={() => setQuantity((q) => Math.min(10, q + 1))} className="h-9 w-9 rounded-lg border border-border flex items-center justify-center" aria-label="Increase"><Plus className="h-4 w-4" /></button>
-              </div>
-            </div>
-
             <div className="hidden md:flex gap-3">
               <Button variant="outline" className="flex-1 h-12" onClick={handleAddToCart}><ShoppingBag className="h-4 w-4 mr-2" /> Add to Cart</Button>
               <Button className="flex-1 h-12" onClick={handleBuyNow}>Buy Now</Button>
@@ -172,7 +170,6 @@ const ProductDetail = () => {
               <AccordionItem value="details">
                 <AccordionTrigger className="font-body text-sm font-semibold">Product Details</AccordionTrigger>
                 <AccordionContent className="font-body text-sm text-muted-foreground space-y-2">
-                  <p>{product.description}</p>
                   <p><strong>Material:</strong> {product.material}</p>
                   <p><strong>Fit:</strong> {product.fit}</p>
                   <p><strong>Occasion:</strong> {product.occasion}</p>
@@ -236,7 +233,7 @@ const ProductDetail = () => {
         <Button variant="outline" className="flex-1 h-11" onClick={handleAddToCart}><ShoppingBag className="h-4 w-4 mr-1" /> Add to Cart</Button>
         <Button className="flex-1 h-11" onClick={handleBuyNow}>Buy Now</Button>
       </div>
-    </motion.div>
+    </motion.div >
   );
 };
 

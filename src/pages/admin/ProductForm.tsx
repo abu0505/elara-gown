@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { compressImageToWebP } from "@/utils/imageCompressor";
+import { uploadToCloudinary } from "@/utils/cloudinaryUpload";
+
+const blobStore = new Map<string, Blob>();
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +15,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, Upload, X, Plus, Check } from "lucide-react";
+import { ArrowLeft, Upload, X, Plus, Trash2, Edit, ImageIcon, Tag, Palette, Save, Eye } from "lucide-react";
+import ColorPickerPopover from "@/components/admin/ColorPickerPopover";
 import { toast } from "sonner";
 import { useAdminStore } from "@/stores/adminStore";
 
@@ -43,7 +47,6 @@ const ProductForm = () => {
   const admin = useAdminStore((s) => s.admin);
   const isEdit = !!productId;
 
-  const [step, setStep] = useState(1);
   const [categories, setCategories] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [showNewCatDialog, setShowNewCatDialog] = useState(false);
@@ -51,8 +54,14 @@ const ProductForm = () => {
   const [newCatImageFile, setNewCatImageFile] = useState<File | null>(null);
   const [newCatImagePreview, setNewCatImagePreview] = useState<string>("");
   const [creatingCat, setCreatingCat] = useState(false);
+  const [deletingCat, setDeletingCat] = useState(false);
 
-  // Step 1
+  const [showEditCatDialog, setShowEditCatDialog] = useState(false);
+  const [editCatImageFile, setEditCatImageFile] = useState<File | null>(null);
+  const [editCatImagePreview, setEditCatImagePreview] = useState<string>("");
+  const [updatingCat, setUpdatingCat] = useState(false);
+
+  // Basic Info
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -66,14 +75,15 @@ const ProductForm = () => {
   const [isNewArrival, setIsNewArrival] = useState(false);
   const [isBestSeller, setIsBestSeller] = useState(false);
 
-  // Step 2
+  // Pricing
   const [basePrice, setBasePrice] = useState("");
   const [salePrice, setSalePrice] = useState("");
 
-  // Step 3
-  const [images, setImages] = useState<ImageUpload[]>([]);
+  // Images
+  const [thumbnail, setThumbnail] = useState<ImageUpload | null>(null);
+  const [galleryImages, setGalleryImages] = useState<ImageUpload[]>([]);
 
-  // Step 4
+  // Variants
   const [colors, setColors] = useState<ColorEntry[]>([]);
   const [newColorName, setNewColorName] = useState("");
   const [newColorHex, setNewColorHex] = useState("#C2185B");
@@ -96,11 +106,16 @@ const ProductForm = () => {
     setIsNewArrival(p.is_new_arrival ?? false); setIsBestSeller(p.is_best_seller ?? false);
     setBasePrice(String(p.base_price)); setSalePrice(p.sale_price ? String(p.sale_price) : "");
 
-    // Load images
     const { data: imgs } = await supabase.from('product_images').select('*').eq('product_id', productId).order('sort_order');
-    if (imgs) setImages(imgs.map(img => ({ id: img.id, preview: img.public_url, status: "done" as const, storagePath: img.storage_path, publicUrl: img.public_url })));
+    if (imgs) {
+      const primaryImg = imgs.find(img => img.is_primary);
+      const galleryImgs = imgs.filter(img => !img.is_primary);
+      if (primaryImg) {
+        setThumbnail({ id: primaryImg.id, preview: primaryImg.public_url, status: "done", storagePath: primaryImg.storage_path, publicUrl: primaryImg.public_url });
+      }
+      setGalleryImages(galleryImgs.map(img => ({ id: img.id, preview: img.public_url, status: "done" as const, storagePath: img.storage_path, publicUrl: img.public_url })));
+    }
 
-    // Load variants
     const { data: variants } = await supabase.from('product_variants').select('*').eq('product_id', productId);
     if (variants && variants.length > 0) {
       const colorMap = new Map<string, ColorEntry>();
@@ -121,11 +136,8 @@ const ProductForm = () => {
   const generateSlug = (n: string) => n.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
   const handleCategoryChange = (value: string) => {
-    if (value === "__new__") {
-      setShowNewCatDialog(true);
-    } else {
-      setCategoryId(value);
-    }
+    if (value === "__new__") setShowNewCatDialog(true);
+    else setCategoryId(value);
   };
 
   const handleCatImageSelect = async (file: File) => {
@@ -136,412 +148,507 @@ const ProductForm = () => {
   const handleCreateCategory = async () => {
     const trimmed = newCatName.trim();
     if (!trimmed) return;
-    if (!newCatImageFile) {
-      toast.error("Please upload a category image");
-      return;
-    }
+    if (!newCatImageFile) { toast.error("Please upload a category image"); return; }
     setCreatingCat(true);
     try {
       const slug = generateSlug(trimmed);
-
-      // Compress and upload category image
-      let imageUrl = "";
       const compressed = await compressImageToWebP(newCatImageFile);
-      const filename = `category-${slug}-${Date.now()}.webp`;
-      const storagePath = `categories/${filename}`;
-      const { error: uploadError } = await supabase.storage
-        .from('product-images')
-        .upload(storagePath, compressed.blob, { contentType: 'image/webp' });
-      if (uploadError) throw uploadError;
-      const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(storagePath);
-      imageUrl = urlData.publicUrl;
-
-      const { data, error } = await supabase
-        .from('categories')
-        .insert({ name: trimmed, slug, is_active: true, image_url: imageUrl })
-        .select('id')
-        .single();
+      const cloudResult = await uploadToCloudinary(compressed.blob);
+      const { data, error } = await supabase.from('categories').insert({ name: trimmed, slug, is_active: true, image_url: cloudResult.secure_url }).select('id').single();
       if (error) throw error;
-      // Refresh categories and auto-select
+      const { data: cats } = await supabase.from('categories').select('*').eq('is_active', true);
+      setCategories(cats || []); setCategoryId(data.id);
+      setNewCatName(""); setNewCatImageFile(null); setNewCatImagePreview(""); setShowNewCatDialog(false);
+      toast.success(`Category "${trimmed}" created!`);
+    } catch (err: any) { toast.error(err.message || "Failed to create category"); } finally { setCreatingCat(false); }
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!categoryId) return;
+    const catToDelete = categories.find(c => c.id === categoryId);
+    if (!catToDelete) return;
+    if (!window.confirm(`Delete "${catToDelete.name}"?\nProducts will become uncategorized.`)) return;
+    setDeletingCat(true);
+    try {
+      const { error } = await supabase.from('categories').delete().eq('id', categoryId);
+      if (error) throw error;
+      toast.success(`Category "${catToDelete.name}" deleted`); setCategoryId("");
       const { data: cats } = await supabase.from('categories').select('*').eq('is_active', true);
       setCategories(cats || []);
-      setCategoryId(data.id);
-      setNewCatName("");
-      setNewCatImageFile(null);
-      setNewCatImagePreview("");
-      setShowNewCatDialog(false);
-      toast.success(`Category "${trimmed}" created!`);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create category");
-    } finally {
-      setCreatingCat(false);
-    }
+    } catch (err: any) { toast.error(err.message || "Failed to delete category"); } finally { setDeletingCat(false); }
   };
 
-  const handleNameChange = (v: string) => {
-    setName(v);
-    if (!isEdit) setSlug(generateSlug(v));
+  const openEditCatDialog = () => {
+    if (!categoryId || categoryId === "__new__") return;
+    const catToEdit = categories.find(c => c.id === categoryId);
+    if (!catToEdit) return;
+    setEditCatImagePreview(catToEdit.image_url || ""); setEditCatImageFile(null); setShowEditCatDialog(true);
   };
 
-  const handleImageUpload = async (files: FileList) => {
+  const handleEditCatImageSelect = async (file: File) => {
+    setEditCatImageFile(file); setEditCatImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleUpdateCategory = async () => {
+    const catToEdit = categories.find(c => c.id === categoryId);
+    if (!catToEdit) return;
+    if (!editCatImageFile && !editCatImagePreview) { toast.error("Please upload a category image"); return; }
+    setUpdatingCat(true);
+    try {
+      let imageUrl = editCatImagePreview;
+      if (editCatImageFile) {
+        const compressed = await compressImageToWebP(editCatImageFile);
+        const cloudResult = await uploadToCloudinary(compressed.blob);
+        imageUrl = cloudResult.secure_url;
+      }
+      const { error } = await supabase.from('categories').update({ image_url: imageUrl }).eq('id', categoryId);
+      if (error) throw error;
+      const { data: cats } = await supabase.from('categories').select('*').eq('is_active', true);
+      setCategories(cats || []); setShowEditCatDialog(false); setEditCatImageFile(null);
+      toast.success(`Category "${catToEdit.name}" image updated!`);
+    } catch (err: any) { toast.error(err.message || "Failed to update category image"); } finally { setUpdatingCat(false); }
+  };
+
+  const handleNameChange = (v: string) => { setName(v); if (!isEdit) setSlug(generateSlug(v)); };
+
+  const handleThumbnailUpload = async (files: FileList) => {
+    const file = files[0]; if (!file) return;
+    const id = crypto.randomUUID();
+    setThumbnail({ preview: URL.createObjectURL(file), file, status: "compressing" });
+    try {
+      const compressed = await compressImageToWebP(file);
+      blobStore.set(id, compressed.blob);
+      setThumbnail({ id, preview: compressed.dataUrl, sizeKB: compressed.sizeKB, originalSizeKB: compressed.originalSizeKB, compressionRatio: compressed.compressionRatio, status: "ready" });
+    } catch { toast.error(`Failed to compress ${file.name}`); setThumbnail(null); }
+  };
+
+  const handleGalleryUpload = async (files: FileList) => {
     for (const file of Array.from(files)) {
       const id = crypto.randomUUID();
-      setImages(prev => [...prev, { preview: URL.createObjectURL(file), file, status: "compressing" }]);
+      setGalleryImages(prev => [...prev, { preview: URL.createObjectURL(file), file, status: "compressing" }]);
       try {
         const compressed = await compressImageToWebP(file);
-        setImages(prev => prev.map(img => img.file === file
-          ? { ...img, preview: compressed.dataUrl, sizeKB: compressed.sizeKB, originalSizeKB: compressed.originalSizeKB, compressionRatio: compressed.compressionRatio, status: "ready", file: undefined }
+        setGalleryImages(prev => prev.map(img => img.file === file
+          ? { ...img, id, preview: compressed.dataUrl, sizeKB: compressed.sizeKB, originalSizeKB: compressed.originalSizeKB, compressionRatio: compressed.compressionRatio, status: "ready", file: undefined }
           : img
         ));
-        // Store blob for later upload
-        (window as any)[`__blob_${id}`] = compressed.blob;
-        setImages(prev => prev.map(img => img.preview === compressed.dataUrl ? { ...img, id } : img));
-      } catch {
-        toast.error(`Failed to compress ${file.name}`);
-      }
+        blobStore.set(id, compressed.blob);
+      } catch { toast.error(`Failed to compress ${file.name}`); }
     }
   };
 
   const addColor = () => {
     if (!newColorName.trim()) return;
     if (colors.some(c => c.name === newColorName)) return;
-    setColors([...colors, { name: newColorName, hex: newColorHex }]);
-    setNewColorName("");
+    setColors([...colors, { name: newColorName, hex: newColorHex }]); setNewColorName("");
   };
 
   const removeColor = (name: string) => {
     setColors(colors.filter(c => c.name !== name));
-    const newMatrix = { ...stockMatrix };
-    delete newMatrix[name];
-    setStockMatrix(newMatrix);
+    const m = { ...stockMatrix }; delete m[name]; setStockMatrix(m);
   };
 
   const updateStock = (color: string, size: string, qty: number) => {
-    setStockMatrix(prev => ({
-      ...prev,
-      [color]: { ...(prev[color] || {}), [size]: Math.max(0, qty) }
-    }));
+    setStockMatrix(prev => ({ ...prev, [color]: { ...(prev[color] || {}), [size]: Math.max(0, qty) } }));
   };
 
   const handleSave = async () => {
     if (!name || !slug || !basePrice) { toast.error("Please fill required fields"); return; }
+    if (!thumbnail) { toast.error("Please upload a thumbnail image"); return; }
     setSaving(true);
-
     try {
       const productData = {
         name, slug, description, category_id: categoryId || null,
         base_price: Number(basePrice), sale_price: salePrice ? Number(salePrice) : null,
-        material, fit_type: fitType, occasion, care_instructions: careInstructions,
+        material, fit_type: fitType, occasion, care_instructions: careInstructions.trim() || "Dry clean only",
         is_active: isActive, is_featured: isFeatured, is_new_arrival: isNewArrival, is_best_seller: isBestSeller,
         created_by: admin?.id,
       };
-
       let pId = productId;
-      if (isEdit) {
-        await supabase.from('products').update(productData).eq('id', productId);
-      } else {
+      if (isEdit) { await supabase.from('products').update(productData).eq('id', productId); }
+      else {
         const { data, error } = await supabase.from('products').insert(productData).select('id').single();
-        if (error) throw error;
-        pId = data.id;
+        if (error) throw error; pId = data.id;
       }
-
-      // Upload new images
-      for (const img of images.filter(i => i.status === "ready" && i.id)) {
-        const blob = (window as any)[`__blob_${img.id}`];
-        if (!blob) continue;
-        const filename = `${crypto.randomUUID()}.webp`;
-        const storagePath = `products/${pId}/${filename}`;
-        const { error } = await supabase.storage.from('product-images').upload(storagePath, blob, { contentType: 'image/webp' });
-        if (error) { console.error(error); continue; }
-        const { data: { publicUrl } } = supabase.storage.from('product-images').getPublicUrl(storagePath);
-        await supabase.from('product_images').insert({ product_id: pId, storage_path: storagePath, public_url: publicUrl, width: 0, height: 0, size_bytes: blob.size });
-        delete (window as any)[`__blob_${img.id}`];
+      // Upload thumbnail
+      if (thumbnail.status === "ready" && thumbnail.id) {
+        const blob = blobStore.get(thumbnail.id);
+        if (blob) {
+          try {
+            const result = await uploadToCloudinary(blob);
+            await supabase.from('product_images').insert({ product_id: pId, storage_path: result.public_id, public_url: result.secure_url, width: result.width, height: result.height, size_bytes: result.bytes, is_primary: true, sort_order: 0 });
+            blobStore.delete(thumbnail.id);
+          } catch (err) { console.error("Thumbnail upload failed:", err); toast.error("Failed to upload thumbnail."); }
+        }
       }
-
-      // Save variants
-      if (isEdit) {
-        await supabase.from('product_variants').delete().eq('product_id', pId);
+      // Upload gallery
+      let sortOrder = 1;
+      for (const img of galleryImages.filter(i => i.status === "ready" && i.id)) {
+        const blob = blobStore.get(img.id!); if (!blob) continue;
+        try {
+          const result = await uploadToCloudinary(blob);
+          await supabase.from('product_images').insert({ product_id: pId, storage_path: result.public_id, public_url: result.secure_url, width: result.width, height: result.height, size_bytes: result.bytes, is_primary: false, sort_order: sortOrder++ });
+          blobStore.delete(img.id!);
+        } catch (err) { console.error("Gallery upload failed:", err); toast.error("Failed to upload an image."); }
       }
+      // Variants
+      if (isEdit) { await supabase.from('product_variants').delete().eq('product_id', pId); }
       const variants: any[] = [];
       for (const color of colors) {
         for (const size of enabledSizes) {
-          const qty = stockMatrix[color.name]?.[size] || 0;
-          variants.push({
-            product_id: pId, size, color_name: color.name, color_hex: color.hex,
-            sku: `${slug}-${size}-${color.name}`.toLowerCase().replace(/\s+/g, '-'),
-            stock_qty: qty,
-          });
+          variants.push({ product_id: pId, size, color_name: color.name, color_hex: color.hex, sku: `${slug}-${size}-${color.name}`.toLowerCase().replace(/\s+/g, '-'), stock_qty: stockMatrix[color.name]?.[size] || 0 });
         }
       }
-      if (variants.length > 0) {
-        await supabase.from('product_variants').insert(variants);
-      }
-
-      toast.success(isEdit ? "Product updated!" : "Product created!");
-      navigate("/admin/inventory");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save product");
-    } finally {
-      setSaving(false);
-    }
+      if (variants.length > 0) { await supabase.from('product_variants').insert(variants); }
+      toast.success(isEdit ? "Product updated!" : "Product created!"); navigate("/admin/inventory");
+    } catch (err: any) { toast.error(err.message || "Failed to save product"); } finally { setSaving(false); }
   };
 
   const discountPercent = basePrice && salePrice && Number(salePrice) < Number(basePrice)
-    ? Math.round(((Number(basePrice) - Number(salePrice)) / Number(basePrice)) * 100)
-    : 0;
+    ? Math.round(((Number(basePrice) - Number(salePrice)) / Number(basePrice)) * 100) : 0;
+
+  const selectedCategory = categories.find(c => c.id === categoryId);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/admin/inventory")}><ArrowLeft className="h-4 w-4" /></Button>
-        <h2 className="font-heading text-lg font-bold">{isEdit ? "Edit Product" : "Add New Product"}</h2>
+    <div className="space-y-0 -m-4 md:-m-6">
+      {/* ─── Sticky Header Bar ─── */}
+      <div className="sticky top-14 z-30 bg-background/95 backdrop-blur-md border-b border-border px-4 md:px-8 py-3 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate("/admin/inventory")}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="min-w-0">
+            <h1 className="font-heading text-base md:text-lg font-bold truncate">{isEdit ? "Edit Product" : "Add New Product"}</h1>
+            {name && <p className="text-xs text-muted-foreground font-body truncate">{name}</p>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button onClick={handleSave} disabled={saving} className="gap-2">
+            <Save className="h-4 w-4" />
+            <span className="hidden sm:inline">{saving ? "Saving..." : (isEdit ? "Update" : "Publish")}</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Step indicator */}
-      <div className="flex gap-2">
-        {[1, 2, 3, 4].map(s => (
-          <button key={s} onClick={() => setStep(s)} className={`flex-1 h-2 rounded-full transition-colors ${s <= step ? 'bg-primary' : 'bg-muted'}`} />
-        ))}
-      </div>
-      <p className="text-xs text-muted-foreground font-body">Step {step} of 4 — {["Basic Info", "Pricing", "Images", "Variants"][step - 1]}</p>
+      {/* ─── Main Content ─── */}
+      <div className="px-4 md:px-8 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-      {/* Step 1: Basic Info */}
-      {step === 1 && (
-        <Card>
-          <CardContent className="space-y-4 pt-6">
-            <div className="grid gap-4">
-              <div className="space-y-2">
-                <Label className="font-body">Product Name *</Label>
-                <Input value={name} onChange={(e) => handleNameChange(e.target.value)} placeholder="Elegant Rose Maxi Dress" />
+          {/* ════════ LEFT COLUMN: Media ════════ */}
+          <div className="lg:col-span-5 xl:col-span-4 space-y-6">
+            {/* Thumbnail */}
+            <div>
+              <h3 className="font-heading text-sm font-semibold mb-3 flex items-center gap-2 text-muted-foreground uppercase tracking-wider">
+                <ImageIcon className="h-4 w-4" /> Thumbnail
+              </h3>
+              {thumbnail ? (
+                <div className="relative rounded-2xl overflow-hidden border border-border bg-muted/20 group">
+                  <img src={thumbnail.preview} alt="Thumbnail" className="w-full aspect-[3/4] object-cover" />
+                  {thumbnail.status === "compressing" && (
+                    <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                      <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+                    </div>
+                  )}
+                  {thumbnail.sizeKB && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+                      <p className="text-[10px] text-white/80 font-body">
+                        {thumbnail.originalSizeKB}KB → {thumbnail.sizeKB}KB ({thumbnail.compressionRatio})
+                      </p>
+                    </div>
+                  )}
+                  <button onClick={() => { if (thumbnail.id) blobStore.delete(thumbnail.id); setThumbnail(null); }}
+                    className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/50 hover:bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                  <Badge className="absolute top-2 left-2 text-[9px] bg-primary/90">Cover Image</Badge>
+                </div>
+              ) : (
+                <div
+                  className="border-2 border-dashed border-border rounded-2xl aspect-[3/4] flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
+                  onClick={() => document.getElementById('thumbnail-upload')?.click()}
+                >
+                  <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center mb-3">
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-body font-medium text-foreground">Upload Thumbnail</p>
+                  <p className="text-[11px] text-muted-foreground font-body mt-1">This appears on product cards</p>
+                  <input id="thumbnail-upload" type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && handleThumbnailUpload(e.target.files)} />
+                </div>
+              )}
+            </div>
+
+            {/* Gallery */}
+            <div>
+              <h3 className="font-heading text-sm font-semibold mb-3 flex items-center gap-2 text-muted-foreground uppercase tracking-wider">
+                Gallery
+              </h3>
+              <div className="grid grid-cols-3 gap-2">
+                {galleryImages.map((img, i) => (
+                  <div key={i} className="relative rounded-xl overflow-hidden border border-border group">
+                    <img src={img.preview} alt="" className="aspect-square object-cover w-full" />
+                    {img.status === "compressing" && (
+                      <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                        <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
+                      </div>
+                    )}
+                    {img.sizeKB && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1.5">
+                        <p className="text-[8px] text-white/80 font-body truncate">
+                          {img.originalSizeKB}→{img.sizeKB}KB
+                        </p>
+                      </div>
+                    )}
+                    <button onClick={() => setGalleryImages(prev => prev.filter((_, idx) => idx !== i))}
+                      className="absolute top-1 right-1 h-5 w-5 rounded-full bg-black/50 hover:bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                {/* Add more button */}
+                <div
+                  className="border-2 border-dashed border-border rounded-xl aspect-square flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
+                  onClick={() => document.getElementById('gallery-upload')?.click()}
+                >
+                  <Plus className="h-5 w-5 text-muted-foreground mb-1" />
+                  <p className="text-[10px] text-muted-foreground font-body">Add</p>
+                  <input id="gallery-upload" type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && handleGalleryUpload(e.target.files)} />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className="font-body">Slug</Label>
-                <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="elegant-rose-maxi-dress" />
+            </div>
+          </div>
+
+          {/* ════════ RIGHT COLUMN: Details ════════ */}
+          <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+
+            {/* ── Product Details ── */}
+            <div className="bg-card rounded-2xl border border-border p-5 md:p-6 space-y-5">
+              <h3 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider">Product Details</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label className="font-body text-xs text-muted-foreground">Product Name *</Label>
+                  <Input value={name} onChange={(e) => handleNameChange(e.target.value)} placeholder="Elegant Rose Maxi Dress" className="h-11 text-base font-medium" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="font-body text-xs text-muted-foreground">Slug</Label>
+                  <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="elegant-rose-maxi-dress" className="font-mono text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="font-body text-xs text-muted-foreground">Category *</Label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <Select value={categoryId} onValueChange={handleCategoryChange}>
+                        <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                        <SelectContent>
+                          {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                          <SelectItem value="__new__" className="text-primary font-medium">
+                            <span className="flex items-center gap-1"><Plus className="h-3 w-3" /> New Category</span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {categoryId && categoryId !== "__new__" && (
+                      <div className="flex gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-9 w-9 hover:text-primary" onClick={openEditCatDialog} title="Edit Category Image">
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 hover:text-destructive" onClick={handleDeleteCategory} disabled={deletingCat} title="Delete Category">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className="font-body">Category *</Label>
-                <Select value={categoryId} onValueChange={handleCategoryChange}>
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                  <SelectContent>
-                    {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                    <SelectItem value="__new__" className="text-primary font-medium">
-                      <span className="flex items-center gap-1"><Plus className="h-3 w-3" /> Create New Category</span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+
+              <div className="space-y-1.5">
+                <Label className="font-body text-xs text-muted-foreground">Description</Label>
+                <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Describe your product..." className="resize-none" />
               </div>
-              <div className="space-y-2">
-                <Label className="font-body">Description</Label>
-                <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="font-body">Material</Label>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="font-body text-xs text-muted-foreground">Material</Label>
                   <Input value={material} onChange={(e) => setMaterial(e.target.value)} placeholder="Cotton Blend" />
                 </div>
-                <div className="space-y-2">
-                  <Label className="font-body">Fit Type</Label>
+                <div className="space-y-1.5">
+                  <Label className="font-body text-xs text-muted-foreground">Fit Type</Label>
                   <Select value={fitType} onValueChange={setFitType}>
                     <SelectTrigger><SelectValue placeholder="Select fit" /></SelectTrigger>
                     <SelectContent>{FIT_TYPES.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-1.5 col-span-2 md:col-span-1">
+                  <Label className="font-body text-xs text-muted-foreground">Care Instructions</Label>
+                  <Input value={careInstructions} onChange={(e) => setCareInstructions(e.target.value)} placeholder="Dry clean only" />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className="font-body">Occasion</Label>
+
+              <div className="space-y-1.5">
+                <Label className="font-body text-xs text-muted-foreground">Occasion</Label>
                 <div className="flex flex-wrap gap-2">
                   {OCCASIONS.map(o => (
                     <button key={o} onClick={() => setOccasion(prev => prev.includes(o) ? prev.filter(x => x !== o) : [...prev, o])}
-                      className={`px-3 py-1 rounded-full text-xs border transition-colors font-body ${occasion.includes(o) ? 'bg-primary text-primary-foreground border-primary' : 'border-border'}`}>
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-all font-body ${occasion.includes(o) ? 'bg-primary text-primary-foreground border-primary shadow-sm' : 'border-border hover:border-primary/50'}`}>
                       {o}
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label className="font-body">Care Instructions</Label>
-                <Textarea value={careInstructions} onChange={(e) => setCareInstructions(e.target.value)} rows={2} />
-              </div>
-              <Separator />
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center justify-between"><Label className="font-body">Active</Label><Switch checked={isActive} onCheckedChange={setIsActive} /></div>
-                <div className="flex items-center justify-between"><Label className="font-body">Featured</Label><Switch checked={isFeatured} onCheckedChange={setIsFeatured} /></div>
-                <div className="flex items-center justify-between"><Label className="font-body">New Arrival</Label><Switch checked={isNewArrival} onCheckedChange={setIsNewArrival} /></div>
-                <div className="flex items-center justify-between"><Label className="font-body">Best Seller</Label><Switch checked={isBestSeller} onCheckedChange={setIsBestSeller} /></div>
-              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Step 2: Pricing */}
-      {step === 2 && (
-        <Card>
-          <CardContent className="space-y-4 pt-6">
-            <div className="space-y-2">
-              <Label className="font-body">Base / MRP Price (₹) *</Label>
-              <Input type="number" value={basePrice} onChange={(e) => setBasePrice(e.target.value)} placeholder="1999" />
-            </div>
-            <div className="space-y-2">
-              <Label className="font-body">Sale Price (₹)</Label>
-              <Input type="number" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="1499" />
-            </div>
-            {discountPercent > 0 && (
-              <Badge className="bg-success text-success-foreground">{discountPercent}% OFF</Badge>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Step 3: Images */}
-      {step === 3 && (
-        <Card>
-          <CardContent className="space-y-4 pt-6">
-            <div
-              className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
-              onClick={() => document.getElementById('image-upload')?.click()}
-            >
-              <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm font-body text-muted-foreground">Click to upload images (max 6)</p>
-              <p className="text-xs text-muted-foreground font-body">Auto-compressed to WebP &lt; 50KB</p>
-              <input id="image-upload" type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && handleImageUpload(e.target.files)} />
-            </div>
-            {images.length > 0 && (
-              <div className="grid grid-cols-3 gap-3">
-                {images.map((img, i) => (
-                  <div key={i} className="relative rounded-lg overflow-hidden border border-border">
-                    <img src={img.preview} alt="" className="aspect-square object-cover w-full" />
-                    {img.status === "compressing" && (
-                      <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                        <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
-                      </div>
-                    )}
-                    {img.sizeKB && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-background/90 px-2 py-1">
-                        <p className="text-[10px] font-body text-muted-foreground">
-                          {img.originalSizeKB}KB → {img.sizeKB}KB ({img.compressionRatio})
-                        </p>
-                      </div>
-                    )}
-                    <button onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))}
-                      className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
-                      <X className="h-3 w-3" />
-                    </button>
-                    {i === 0 && <Badge className="absolute top-1 left-1 text-[8px]">Cover</Badge>}
+            {/* ── Pricing & Flags Row ── */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Pricing */}
+              <div className="bg-card rounded-2xl border border-border p-5 md:p-6 space-y-4">
+                <h3 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                  <Tag className="h-4 w-4" /> Pricing
+                </h3>
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="font-body text-xs text-muted-foreground">MRP (₹) *</Label>
+                    <Input type="number" value={basePrice} onChange={(e) => setBasePrice(e.target.value)} placeholder="1999" className="h-11 text-lg font-semibold" />
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Step 4: Variants */}
-      {step === 4 && (
-        <Card>
-          <CardContent className="space-y-6 pt-6">
-            {/* Color management */}
-            <div>
-              <Label className="font-body mb-2 block">Colors</Label>
-              <div className="flex gap-2 mb-3">
-                <Input placeholder="Color name" value={newColorName} onChange={(e) => setNewColorName(e.target.value)} className="flex-1" />
-                <input type="color" value={newColorHex} onChange={(e) => setNewColorHex(e.target.value)} className="h-9 w-12 rounded border border-border cursor-pointer" />
-                <Button size="sm" onClick={addColor}><Plus className="h-4 w-4" /></Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {colors.map(c => (
-                  <Badge key={c.name} variant="secondary" className="gap-1 pr-1">
-                    <div className="h-3 w-3 rounded-full border border-border" style={{ backgroundColor: c.hex }} />
-                    <span className="font-body text-xs">{c.name}</span>
-                    <button onClick={() => removeColor(c.name)}><X className="h-3 w-3" /></button>
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Size selection */}
-            <div>
-              <Label className="font-body mb-2 block">Sizes</Label>
-              <div className="flex flex-wrap gap-2">
-                {SIZES.map(s => (
-                  <button key={s} onClick={() => setEnabledSizes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors font-body ${enabledSizes.includes(s) ? 'bg-primary text-primary-foreground border-primary' : 'border-border'}`}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Stock matrix */}
-            {colors.length > 0 && enabledSizes.length > 0 && (
-              <div>
-                <Label className="font-body mb-2 block">Stock Matrix</Label>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm font-body">
-                    <thead>
-                      <tr>
-                        <th className="text-left p-2 text-xs text-muted-foreground">Size \ Color</th>
-                        {colors.map(c => (
-                          <th key={c.name} className="p-2 text-xs text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: c.hex }} />
-                              {c.name}
-                            </div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {enabledSizes.map(size => (
-                        <tr key={size}>
-                          <td className="p-2 font-medium">{size}</td>
-                          {colors.map(color => (
-                            <td key={color.name} className="p-2">
-                              <Input
-                                type="number"
-                                min={0}
-                                value={stockMatrix[color.name]?.[size] || 0}
-                                onChange={(e) => updateStock(color.name, size, parseInt(e.target.value) || 0)}
-                                className="w-16 h-8 text-center text-xs mx-auto"
-                              />
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div className="space-y-1.5">
+                    <Label className="font-body text-xs text-muted-foreground">Sale Price (₹)</Label>
+                    <Input type="number" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="1499" className="h-11 text-lg" />
+                  </div>
+                  {discountPercent > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-sm px-3 py-1">{discountPercent}% OFF</Badge>
+                      <span className="text-xs text-muted-foreground font-body">You save ₹{Number(basePrice) - Number(salePrice)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Create Category Dialog */}
+              {/* Flags */}
+              <div className="bg-card rounded-2xl border border-border p-5 md:p-6 space-y-4">
+                <h3 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                  <Eye className="h-4 w-4" /> Visibility
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { label: "Active", desc: "Product is live on store", checked: isActive, onChange: setIsActive },
+                    { label: "Featured", desc: "Show in featured section", checked: isFeatured, onChange: setIsFeatured },
+                    { label: "New Arrival", desc: "Mark as new arrival", checked: isNewArrival, onChange: setIsNewArrival },
+                    { label: "Best Seller", desc: "Show in best sellers", checked: isBestSeller, onChange: setIsBestSeller },
+                  ].map(flag => (
+                    <div key={flag.label} className="flex items-center justify-between py-1">
+                      <div>
+                        <p className="text-sm font-medium font-body">{flag.label}</p>
+                        <p className="text-[11px] text-muted-foreground font-body">{flag.desc}</p>
+                      </div>
+                      <Switch checked={flag.checked} onCheckedChange={flag.onChange} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ── Variants ── */}
+            <div className="bg-card rounded-2xl border border-border p-5 md:p-6 space-y-5">
+              <h3 className="font-heading text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                <Palette className="h-4 w-4" /> Variants & Stock
+              </h3>
+
+              {/* Colors */}
+              <div>
+                <Label className="font-body text-xs text-muted-foreground mb-2 block">Colors</Label>
+                <div className="flex gap-2 mb-3">
+                  <Input placeholder="e.g. Rose Pink" value={newColorName} onChange={(e) => setNewColorName(e.target.value)} className="flex-1" onKeyDown={(e) => e.key === 'Enter' && addColor()} />
+                  <ColorPickerPopover
+                    value={newColorHex}
+                    colorName={newColorName}
+                    onColorChange={(hex, name) => { setNewColorHex(hex); if (!newColorName.trim()) setNewColorName(name); }}
+                  />
+                  <Button size="sm" onClick={addColor} variant="secondary"><Plus className="h-4 w-4" /></Button>
+                </div>
+                {colors.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {colors.map(c => (
+                      <div key={c.name} className="flex items-center gap-2 bg-muted/50 rounded-full pl-1.5 pr-2 py-1 border border-border">
+                        <div className="h-5 w-5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: c.hex }} />
+                        <span className="font-body text-xs font-medium">{c.name}</span>
+                        <button onClick={() => removeColor(c.name)} className="h-4 w-4 rounded-full hover:bg-destructive/20 flex items-center justify-center"><X className="h-2.5 w-2.5" /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Sizes */}
+              <div>
+                <Label className="font-body text-xs text-muted-foreground mb-2 block">Sizes</Label>
+                <div className="flex flex-wrap gap-2">
+                  {SIZES.map(s => (
+                    <button key={s} onClick={() => setEnabledSizes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])}
+                      className={`w-12 h-10 rounded-xl text-xs font-semibold border-2 transition-all font-body ${enabledSizes.includes(s) ? 'bg-primary text-primary-foreground border-primary shadow-sm' : 'border-border hover:border-primary/50'}`}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Stock matrix */}
+              {colors.length > 0 && enabledSizes.length > 0 && (
+                <div>
+                  <Label className="font-body text-xs text-muted-foreground mb-2 block">Stock Quantities</Label>
+                  <div className="overflow-x-auto rounded-xl border border-border">
+                    <table className="w-full text-sm font-body">
+                      <thead>
+                        <tr className="bg-muted/50">
+                          <th className="text-left p-3 text-xs text-muted-foreground font-medium">Size</th>
+                          {colors.map(c => (
+                            <th key={c.name} className="p-3 text-xs text-center font-medium">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <div className="h-3 w-3 rounded-full shadow-sm" style={{ backgroundColor: c.hex }} />
+                                {c.name}
+                              </div>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {enabledSizes.map((size, idx) => (
+                          <tr key={size} className={idx % 2 === 0 ? "" : "bg-muted/20"}>
+                            <td className="p-3 font-semibold">{size}</td>
+                            {colors.map(color => (
+                              <td key={color.name} className="p-2 text-center">
+                                <Input
+                                  type="number" min={0}
+                                  value={stockMatrix[color.name]?.[size] || 0}
+                                  onChange={(e) => updateStock(color.name, size, parseInt(e.target.value) || 0)}
+                                  className="w-16 h-9 text-center text-sm mx-auto"
+                                />
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Dialogs ─── */}
       <Dialog open={showNewCatDialog} onOpenChange={(open) => { setShowNewCatDialog(open); if (!open) { setNewCatImageFile(null); setNewCatImagePreview(""); } }}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-heading">Create New Category</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle className="font-heading">Create New Category</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label className="font-body">Category Name *</Label>
-              <Input
-                value={newCatName}
-                onChange={(e) => setNewCatName(e.target.value)}
-                placeholder="e.g. Bridal Wear"
-                autoFocus
-              />
+              <Input value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="e.g. Bridal Wear" autoFocus />
             </div>
-            {newCatName.trim() && (
-              <p className="text-xs text-muted-foreground font-body">Slug: <code className="bg-muted px-1 py-0.5 rounded">{generateSlug(newCatName)}</code></p>
-            )}
+            {newCatName.trim() && <p className="text-xs text-muted-foreground font-body">Slug: <code className="bg-muted px-1 py-0.5 rounded">{generateSlug(newCatName)}</code></p>}
             <div className="space-y-2">
               <Label className="font-body">Category Image *</Label>
-              <div
-                className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors"
-                onClick={() => document.getElementById('cat-image-upload')?.click()}
-              >
+              <div className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors" onClick={() => document.getElementById('cat-image-upload')?.click()}>
                 {newCatImagePreview ? (
                   <div className="flex flex-col items-center gap-2">
                     <img src={newCatImagePreview} alt="Preview" className="w-24 h-24 rounded-full object-cover border-2 border-border" />
@@ -550,39 +657,48 @@ const ProductForm = () => {
                 ) : (
                   <div className="flex flex-col items-center gap-2">
                     <Upload className="h-6 w-6 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground font-body">Click to upload category image</p>
+                    <p className="text-xs text-muted-foreground font-body">Click to upload</p>
                   </div>
                 )}
-                <input
-                  id="cat-image-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleCatImageSelect(e.target.files[0])}
-                />
+                <input id="cat-image-upload" type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleCatImageSelect(e.target.files[0])} />
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNewCatDialog(false)}>Cancel</Button>
-            <Button onClick={handleCreateCategory} disabled={creatingCat || !newCatName.trim() || !newCatImageFile}>
-              {creatingCat ? "Creating..." : "Create"}
-            </Button>
+            <Button onClick={handleCreateCategory} disabled={creatingCat || !newCatName.trim() || !newCatImageFile}>{creatingCat ? "Creating..." : "Create"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Navigation */}
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1}>Previous</Button>
-        {step < 4 ? (
-          <Button onClick={() => setStep(s => s + 1)}>Next</Button>
-        ) : (
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : (isEdit ? "Update Product" : "Save & Publish")}
-          </Button>
-        )}
-      </div>
+      <Dialog open={showEditCatDialog} onOpenChange={(open) => { setShowEditCatDialog(open); if (!open) { setEditCatImageFile(null); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle className="font-heading">Edit Category Image</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="font-body">Category Image</Label>
+              <div className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-primary transition-colors" onClick={() => document.getElementById('edit-cat-image-upload')?.click()}>
+                {editCatImagePreview ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <img src={editCatImagePreview} alt="Preview" className="w-24 h-24 rounded-full object-cover border-2 border-border" />
+                    <p className="text-xs text-muted-foreground font-body">Click to change</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground font-body">Click to upload</p>
+                  </div>
+                )}
+                <input id="edit-cat-image-upload" type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleEditCatImageSelect(e.target.files[0])} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditCatDialog(false)}>Cancel</Button>
+            <Button onClick={handleUpdateCategory} disabled={updatingCat || (!editCatImageFile && !editCatImagePreview)}>{updatingCat ? "Updating..." : "Update"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

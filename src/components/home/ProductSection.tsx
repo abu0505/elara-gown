@@ -9,6 +9,8 @@ interface ProductSectionProps {
 }
 
 export function ProductSection({ title, products, viewAllLink }: ProductSectionProps) {
+  if (!products || products.length === 0) return null;
+
   return (
     <section className="container py-8 md:py-16">
       <div className="flex items-center justify-between mb-6">

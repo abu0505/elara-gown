@@ -94,7 +94,7 @@ const AdminManagement = () => {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
+          <div className="overflow-x-auto"><Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="font-body text-xs">Name</TableHead>
@@ -131,7 +131,7 @@ const AdminManagement = () => {
                 );
               })}
             </TableBody>
-          </Table>
+          </Table></div>
         </CardContent>
       </Card>
 

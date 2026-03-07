@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { products as hardcodedProducts } from "@/data/products";
 import { categories as hardcodedCategories } from "@/data/categories";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
@@ -25,8 +24,8 @@ const Products = () => {
   const urlFilter = searchParams.get("filter");
   const urlSearch = searchParams.get("search");
 
-  const { data: dbProducts } = useAllProducts();
-  const allProducts = dbProducts || hardcodedProducts;
+  const { data: dbProducts, isLoading: isProductsLoading } = useAllProducts();
+  const allProducts = dbProducts || [];
 
   const { data: dbCategories } = useQuery({
     queryKey: ["categories", "active-for-filter"],
@@ -69,7 +68,11 @@ const Products = () => {
       case "price_desc": result.sort((a, b) => b.price - a.price); break;
       case "popular": result.sort((a, b) => b.reviewCount - a.reviewCount); break;
       case "rating": result.sort((a, b) => b.rating - a.rating); break;
-      default: result.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
+      case "newest":
+      default:
+        // Already sorted by 'created_at' descending from Supabase API
+        // So we maintain the original array order
+        break;
     }
 
     return result;
@@ -83,6 +86,19 @@ const Products = () => {
 
   const FilterContent = () => (
     <div className="space-y-6 p-1">
+      <div>
+        <h4 className="text-sm font-semibold mb-3 font-body">Sort By</h4>
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+          <SelectTrigger className="w-full text-sm"><SelectValue placeholder="Sort by" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Newest First</SelectItem>
+            <SelectItem value="price_asc">Price: Low to High</SelectItem>
+            <SelectItem value="price_desc">Price: High to Low</SelectItem>
+            <SelectItem value="popular">Most Popular</SelectItem>
+            <SelectItem value="rating">Top Rated</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       <div>
         <h4 className="text-sm font-semibold mb-3 font-body">Category</h4>
         <div className="space-y-2">
@@ -129,25 +145,15 @@ const Products = () => {
             <Sheet>
               <SheetTrigger asChild className="md:hidden">
                 <Button variant="outline" size="sm" className="relative">
-                  <SlidersHorizontal className="h-4 w-4 mr-1" />Filter
+                  <SlidersHorizontal className="h-4 w-4 mr-1" />Filter & Sort
                   {filterCount > 0 && <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">{filterCount}</span>}
                 </Button>
               </SheetTrigger>
               <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-2xl">
-                <SheetHeader><SheetTitle className="font-heading">Filters</SheetTitle></SheetHeader>
+                <SheetHeader><SheetTitle className="font-heading">Filter & Sort</SheetTitle></SheetHeader>
                 <FilterContent />
               </SheetContent>
             </Sheet>
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-              <SelectTrigger className="w-[140px] h-9 text-xs"><SelectValue placeholder="Sort by" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="price_asc">Price: Low to High</SelectItem>
-                <SelectItem value="price_desc">Price: High to Low</SelectItem>
-                <SelectItem value="popular">Most Popular</SelectItem>
-                <SelectItem value="rating">Top Rated</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
@@ -161,7 +167,11 @@ const Products = () => {
         <div className="flex gap-8">
           <aside className="hidden md:block w-56 flex-shrink-0"><FilterContent /></aside>
           <div className="flex-1">
-            {filtered.length === 0 ? (
+            {isProductsLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-lg font-heading mb-2">No products found</p>
                 <p className="text-sm text-muted-foreground font-body mb-4">Try different filters</p>

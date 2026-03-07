@@ -119,9 +119,9 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       {/* Duration selector */}
-      <div className="flex justify-end">
+      <div className="flex justify-end overflow-x-auto">
         <Tabs value={duration} onValueChange={(v) => setDuration(v as Duration)}>
-          <TabsList>
+          <TabsList className="flex-nowrap">
             <TabsTrigger value="today" className="text-xs">Today</TabsTrigger>
             <TabsTrigger value="week" className="text-xs">Week</TabsTrigger>
             <TabsTrigger value="month" className="text-xs">Month</TabsTrigger>
@@ -243,7 +243,7 @@ const Dashboard = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div className="overflow-x-auto"><Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="font-body text-xs">Order #</TableHead>
@@ -280,13 +280,13 @@ const Dashboard = () => {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+          </Table></div>
         </CardContent>
       </Card>
 
       {/* Low stock + Quick stats */}
       <div className="grid md:grid-cols-2 gap-4">
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader>
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-accent" />
@@ -299,9 +299,9 @@ const Dashboard = () => {
             ) : (
               <div className="space-y-2">
                 {lowStock.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between text-sm font-body">
-                    <span>{(item.products as any)?.name} — {item.size} / {item.color_name}</span>
-                    <Badge variant={item.stock_qty === 0 ? "destructive" : "secondary"} className="text-[10px]">
+                  <div key={item.id} className="flex items-center justify-between gap-2 text-sm font-body overflow-hidden">
+                    <span className="min-w-0 truncate">{(item.products as any)?.name} — {item.size} / {item.color_name}</span>
+                    <Badge variant={item.stock_qty === 0 ? "destructive" : "secondary"} className="text-[10px] shrink-0">
                       {item.stock_qty} left
                     </Badge>
                   </div>
@@ -310,34 +310,34 @@ const Dashboard = () => {
             )}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle className="text-sm font-body">Quick Stats</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 min-w-0">
                 <ShoppingBag className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-lg font-bold font-body">{quickStats.products}</p>
                   <p className="text-[10px] text-muted-foreground font-body">Active Products</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 min-w-0">
                 <Tag className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-lg font-bold font-body">{quickStats.coupons}</p>
                   <p className="text-[10px] text-muted-foreground font-body">Active Coupons</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 min-w-0">
                 <Ticket className="h-4 w-4 text-primary" />
                 <div>
                   <p className="text-lg font-bold font-body">{quickStats.tickets}</p>
                   <p className="text-[10px] text-muted-foreground font-body">Open Tickets</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 min-w-0">
                 <AlertTriangle className="h-4 w-4 text-destructive" />
                 <div>
                   <p className="text-lg font-bold font-body">{quickStats.outOfStock}</p>

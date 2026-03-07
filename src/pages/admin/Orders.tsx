@@ -54,7 +54,7 @@ const Orders = () => {
           <Input placeholder="Search orders..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-full sm:w-[160px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -65,7 +65,7 @@ const Orders = () => {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
+          <div className="overflow-x-auto"><Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="font-body text-xs">Order #</TableHead>
@@ -117,7 +117,7 @@ const Orders = () => {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+          </Table></div>
         </CardContent>
       </Card>
     </div>
