@@ -12,10 +12,10 @@ const navItems = [
   { label: "Orders", href: "/admin/orders", icon: ShoppingBag },
   { label: "Inventory", href: "/admin/inventory", icon: Package },
   { label: "Coupons", href: "/admin/coupons", icon: Tag },
+  { label: "Returns", href: "/admin/returns", icon: RefreshCw },
 ];
 
 const mainAdminItems = [
-  { label: "Admin Management", href: "/admin/admins", icon: Users },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
