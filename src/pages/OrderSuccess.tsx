@@ -5,7 +5,16 @@ import { motion } from "framer-motion";
 
 const OrderSuccess = () => {
   const [searchParams] = useSearchParams();
-  const orderNumber = searchParams.get("order") || `ORD-2026-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+  const orderNumber = searchParams.get("order");
+
+  if (!orderNumber) {
+    return (
+      <div className="container py-20 text-center">
+        <p className="text-lg font-heading mb-4">No order information found</p>
+        <Button asChild><Link to="/products">Continue Shopping</Link></Button>
+      </div>
+    );
+  }
 
   return (
     <motion.div

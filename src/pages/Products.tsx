@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { categories as hardcodedCategories } from "@/data/categories";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,16 +34,23 @@ const Products = () => {
         .select("id, name, slug")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
-      if (error || !data || data.length === 0) return null;
+      if (error || !data || data.length === 0) return [];
       return data.map((c) => ({ id: c.slug, name: c.name }));
     },
     staleTime: 1000 * 60 * 5,
   });
-  const categories = dbCategories || hardcodedCategories;
+  const categories = dbCategories || [];
+
+  // Derive available colors from products
+  const availableColors = useMemo(() => {
+    const colorMap = new Map<string, string>();
+    allProducts.forEach(p => p.colors.forEach(c => colorMap.set(c.hex, c.name)));
+    return Array.from(colorMap.entries()).map(([hex, name]) => ({ hex, name }));
+  }, [allProducts]);
 
   const {
-    category: filterCats, priceRange, sizes, sortBy,
-    toggleCategory, setPriceRange, toggleSize, setSortBy, clearFilters, getActiveFilterCount,
+    category: filterCats, priceRange, sizes, colors: filterColors, sortBy,
+    toggleCategory, setPriceRange, toggleSize, toggleColor, setSortBy, clearFilters, getActiveFilterCount,
   } = useFilterStore();
 
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
@@ -54,7 +60,10 @@ const Products = () => {
   const filtered = useMemo(() => {
     let result = [...allProducts];
 
-    if (urlFilter === "new") result = result.filter((p) => p.isNew);
+    // URL filter params
+    if (urlFilter === "new" || urlFilter === "new_arrival") result = result.filter((p) => p.isNew);
+    if (urlFilter === "best_seller") result = result.filter((p) => p.isBestSeller);
+
     if (urlSearch) {
       const q = urlSearch.toLowerCase();
       result = result.filter((p) => p.name.toLowerCase().includes(q) || p.category.includes(q));
@@ -62,6 +71,7 @@ const Products = () => {
     if (activeCats.length > 0) result = result.filter((p) => activeCats.includes(p.category));
     result = result.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
     if (sizes.length > 0) result = result.filter((p) => sizes.some((s) => p.availableSizes.includes(s)));
+    if (filterColors.length > 0) result = result.filter((p) => p.colors.some(c => filterColors.includes(c.hex)));
 
     switch (sortBy) {
       case "price_asc": result.sort((a, b) => a.price - b.price); break;
@@ -70,17 +80,17 @@ const Products = () => {
       case "rating": result.sort((a, b) => b.rating - a.rating); break;
       case "newest":
       default:
-        // Already sorted by 'created_at' descending from Supabase API
-        // So we maintain the original array order
         break;
     }
 
     return result;
-  }, [allProducts, activeCats, priceRange, sizes, sortBy, urlFilter, urlSearch]);
+  }, [allProducts, activeCats, priceRange, sizes, filterColors, sortBy, urlFilter, urlSearch]);
 
   const pageTitle = urlCategory
     ? categories.find((c) => c.id === urlCategory)?.name || "All Dresses"
-    : urlFilter === "new" ? "New Arrivals" : urlSearch ? `Results for "${urlSearch}"` : "All Dresses";
+    : urlFilter === "new" || urlFilter === "new_arrival" ? "New Arrivals"
+      : urlFilter === "best_seller" ? "Best Sellers"
+        : urlSearch ? `Results for "${urlSearch}"` : "All Dresses";
 
   const filterCount = getActiveFilterCount();
 
@@ -125,6 +135,22 @@ const Products = () => {
           ))}
         </div>
       </div>
+      {availableColors.length > 0 && (
+        <div>
+          <h4 className="text-sm font-semibold mb-3 font-body">Color</h4>
+          <div className="flex flex-wrap gap-2">
+            {availableColors.map((c) => (
+              <button
+                key={c.hex}
+                onClick={() => toggleColor(c.hex)}
+                title={c.name}
+                className={`h-7 w-7 rounded-full border-2 transition-all ${filterColors.includes(c.hex) ? "border-primary ring-2 ring-primary/30 scale-110" : "border-border"}`}
+                style={{ backgroundColor: c.hex }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
       <Button variant="outline" size="sm" onClick={clearFilters} className="w-full">Clear All Filters</Button>
     </div>
   );
@@ -157,10 +183,17 @@ const Products = () => {
           </div>
         </div>
 
-        {(activeCats.length > 0 || sizes.length > 0) && (
+        {(activeCats.length > 0 || sizes.length > 0 || filterColors.length > 0) && (
           <div className="flex flex-wrap gap-2 mb-4">
-            {activeCats.map((c) => (<Badge key={c} variant="secondary" className="cursor-pointer gap-1 font-body" onClick={() => toggleCategory(c)}>{categories.find((cat) => cat.id === c)?.name}<X className="h-3 w-3" /></Badge>))}
+            {activeCats.map((c) => (<Badge key={c} variant="secondary" className="cursor-pointer gap-1 font-body" onClick={() => toggleCategory(c)}>{categories.find((cat) => cat.id === c)?.name || c}<X className="h-3 w-3" /></Badge>))}
             {sizes.map((s) => (<Badge key={s} variant="secondary" className="cursor-pointer gap-1 font-body" onClick={() => toggleSize(s)}>{s}<X className="h-3 w-3" /></Badge>))}
+            {filterColors.map((hex) => (
+              <Badge key={hex} variant="secondary" className="cursor-pointer gap-1 font-body" onClick={() => toggleColor(hex)}>
+                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: hex }} />
+                {availableColors.find(c => c.hex === hex)?.name || hex}
+                <X className="h-3 w-3" />
+              </Badge>
+            ))}
           </div>
         )}
 

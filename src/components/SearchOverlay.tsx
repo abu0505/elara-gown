@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, X, TrendingUp, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { products } from "@/data/products";
+import { useAllProducts } from "@/hooks/useProducts";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -15,6 +15,7 @@ interface SearchOverlayProps {
 export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const { data: products } = useAllProducts();
   const [recent, setRecent] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem("recentSearches") || "[]"); } catch { return []; }
   });
@@ -34,7 +35,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   }, [onClose]);
 
   const filtered = query.length >= 2
-    ? products.filter((p) =>
+    ? (products || []).filter((p) =>
         p.name.toLowerCase().includes(query.toLowerCase()) ||
         p.category.toLowerCase().includes(query.toLowerCase())
       ).slice(0, 8)
@@ -124,7 +125,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                       onClick={() => { saveSearch(p.name); onClose(); }}
                       className="flex items-center gap-3 p-3 rounded-lg hover:bg-secondary transition-colors"
                     >
-                      <img src={p.images[0]} alt={p.name} className="w-12 h-15 object-cover rounded" width={48} height={60} />
+                      {p.images[0] && <img src={p.images[0]} alt={p.name} className="w-12 h-15 object-cover rounded" width={48} height={60} />}
                       <div>
                         <p className="text-sm font-medium font-body">{p.name}</p>
                         <p className="text-xs text-muted-foreground font-body">₹{p.price.toLocaleString()}</p>

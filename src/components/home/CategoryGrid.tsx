@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { categories as hardcodedCategories } from "@/data/categories";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -22,22 +21,19 @@ export function CategoryGrid() {
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
 
-      if (error || !data || data.length === 0) {
-        return null;
-      }
+      if (error || !data || data.length === 0) return [];
       return data as DBCategory[];
     },
     staleTime: 1000 * 60 * 5,
   });
 
-  const categories = dbCategories
-    ? dbCategories.map((c) => ({
-      id: c.slug,
-      name: c.name,
-      image: c.image_url || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80&fit=crop&auto=format",
-      productCount: 0,
-    }))
-    : hardcodedCategories;
+  const categories = (dbCategories || []).map((c) => ({
+    id: c.slug,
+    name: c.name,
+    image: c.image_url || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80&fit=crop&auto=format",
+  }));
+
+  if (categories.length === 0) return null;
 
   return (
     <section className="container py-8 md:py-16">

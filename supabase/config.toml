@@ -1,11 +1,5 @@
 project_id = "yjulkjmrrawnjqvefizt"
 
-[functions.create-admin-user]
-verify_jwt = false
-
-[functions.delete-admin-user]
-verify_jwt = false
-
 [functions.validate-coupon]
 verify_jwt = false
 
@@ -16,4 +10,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.create-return-request]
+verify_jwt = false
+
+[functions.send-order-confirmation]
 verify_jwt = false

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, ShoppingBag, Tag, Users, Settings, LogOut, Menu, X, Bell } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, Tag, Settings, LogOut, Menu, X, Bell, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -12,10 +12,10 @@ const navItems = [
   { label: "Orders", href: "/admin/orders", icon: ShoppingBag },
   { label: "Inventory", href: "/admin/inventory", icon: Package },
   { label: "Coupons", href: "/admin/coupons", icon: Tag },
+  { label: "Returns", href: "/admin/returns", icon: RefreshCw },
 ];
 
 const mainAdminItems = [
-  { label: "Admin Management", href: "/admin/admins", icon: Users },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 

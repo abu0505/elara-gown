@@ -1,6 +1,33 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { products as hardcodedProducts, getProductById as getHardcodedProduct, getNewArrivals, getBestSellers, type Product } from "@/data/products";
+
+export interface Product {
+  id: string;
+  name: string;
+  brand: string;
+  category: string;
+  price: number;
+  originalPrice: number;
+  discountPercent: number;
+  rating: number;
+  reviewCount: number;
+  images: string[];
+  imageColorMap: { url: string; colorHex: string | null }[];
+  sizes: string[];
+  availableSizes: string[];
+  colors: { hex: string; name: string }[];
+  isNew: boolean;
+  isSale: boolean;
+  isBestSeller: boolean;
+  material: string;
+  fit: string;
+  occasion: string;
+  description: string;
+  careInstructions: string;
+  inStock: boolean;
+  stockCount: number;
+  variants: { id: string; size: string; color_name: string; color_hex: string; stock_qty: number; is_active: boolean }[];
+}
 
 const PRODUCT_SELECT = `
   id, name, slug, base_price, sale_price, discount_percent,
@@ -8,8 +35,9 @@ const PRODUCT_SELECT = `
   description, material, fit_type, occasion, care_instructions,
   category_id,
   category:categories(id, name, slug),
-  images:product_images(id, public_url, is_primary, sort_order),
-  variants:product_variants(id, size, color_name, color_hex, stock_qty, is_active)
+  images:product_images(id, public_url, is_primary, sort_order, color_hex),
+  variants:product_variants(id, size, color_name, color_hex, stock_qty, is_active),
+  reviews:reviews(rating)
 `;
 
 interface SupabaseProduct {
@@ -30,11 +58,11 @@ interface SupabaseProduct {
   care_instructions: string | null;
   category_id: string | null;
   category: { id: string; name: string; slug: string } | null;
-  images: { id: string; public_url: string; is_primary: boolean; sort_order: number }[];
+  images: { id: string; public_url: string; is_primary: boolean; sort_order: number; color_hex: string | null }[];
   variants: { id: string; size: string; color_name: string; color_hex: string; stock_qty: number; is_active: boolean }[];
+  reviews: { rating: number }[];
 }
 
-// Convert Supabase product to the format used by ProductCard
 function toStorefrontProduct(p: SupabaseProduct): Product {
   const sortedImages = [...(p.images || [])].sort((a, b) => {
     if (a.is_primary && !b.is_primary) return -1;
@@ -56,6 +84,13 @@ function toStorefrontProduct(p: SupabaseProduct): Product {
 
   const totalStock = (p.variants || []).reduce((sum, v) => sum + v.stock_qty, 0);
 
+  // Compute rating from reviews
+  const approvedReviews = p.reviews || [];
+  const reviewCount = approvedReviews.length;
+  const avgRating = reviewCount > 0
+    ? Math.round((approvedReviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount) * 10) / 10
+    : 0;
+
   return {
     id: p.id,
     name: p.name,
@@ -64,12 +99,13 @@ function toStorefrontProduct(p: SupabaseProduct): Product {
     price: p.sale_price || p.base_price,
     originalPrice: p.base_price,
     discountPercent: p.discount_percent || 0,
-    rating: 4.5,
-    reviewCount: 0,
-    images: sortedImages.length > 0 ? sortedImages.map(i => i.public_url) : ["https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&q=80&fit=crop&auto=format"],
-    sizes: sizes.length > 0 ? sizes : ["S", "M", "L", "XL"],
-    availableSizes: availableSizes.length > 0 ? availableSizes : ["S", "M", "L"],
-    colors: colors.length > 0 ? colors : [{ hex: "#000000", name: "Black" }],
+    rating: avgRating,
+    reviewCount,
+    images: sortedImages.length > 0 ? sortedImages.map(i => i.public_url) : [],
+    imageColorMap: sortedImages.map(i => ({ url: i.public_url, colorHex: i.color_hex })),
+    sizes: sizes.length > 0 ? sizes : [],
+    availableSizes: availableSizes.length > 0 ? availableSizes : [],
+    colors: colors.length > 0 ? colors : [],
     isNew: p.is_new_arrival || false,
     isSale: (p.discount_percent || 0) > 0,
     isBestSeller: p.is_best_seller || false,
@@ -80,6 +116,7 @@ function toStorefrontProduct(p: SupabaseProduct): Product {
     careInstructions: p.care_instructions || "",
     inStock: totalStock > 0,
     stockCount: totalStock,
+    variants: p.variants || [],
   };
 }
 
@@ -93,9 +130,7 @@ export function useAllProducts() {
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-      if (error || !data || data.length === 0) {
-        return [];
-      }
+      if (error || !data || data.length === 0) return [];
       return (data as unknown as SupabaseProduct[]).map(toStorefrontProduct);
     },
     staleTime: 1000 * 60 * 5,
@@ -114,9 +149,7 @@ export function useFeaturedProducts() {
         .order("created_at", { ascending: false })
         .limit(8);
 
-      if (error || !data || data.length === 0) {
-        return [];
-      }
+      if (error || !data || data.length === 0) return [];
       return (data as unknown as SupabaseProduct[]).map(toStorefrontProduct);
     },
     staleTime: 1000 * 60 * 5,
@@ -135,9 +168,7 @@ export function useNewArrivals() {
         .order("created_at", { ascending: false })
         .limit(8);
 
-      if (error || !data || data.length === 0) {
-        return [];
-      }
+      if (error || !data || data.length === 0) return [];
       return (data as unknown as SupabaseProduct[]).map(toStorefrontProduct);
     },
     staleTime: 1000 * 60 * 5,
@@ -156,9 +187,7 @@ export function useBestSellers() {
         .order("created_at", { ascending: false })
         .limit(8);
 
-      if (error || !data || data.length === 0) {
-        return [];
-      }
+      if (error || !data || data.length === 0) return [];
       return (data as unknown as SupabaseProduct[]).map(toStorefrontProduct);
     },
     staleTime: 1000 * 60 * 5,
@@ -171,7 +200,6 @@ export function useProductDetail(productId: string | undefined) {
     queryFn: async () => {
       if (!productId) return null;
 
-      // Try by ID first, then by slug
       let result;
       const { data: byId } = await supabase
         .from("products")

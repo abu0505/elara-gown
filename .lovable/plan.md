@@ -1,129 +1,177 @@
+# Phase 2 Implementation Plan — Admin Panel, Database Schema, and Customer Pages
 
+## Current State
 
-# Phase 4 Implementation Plan — Reviews, Color Variants, Return Flow, Data Cleanup, UI Fixes
+- Fully functional customer storefront with hardcoded product data (24 products, 6 categories)
+- Zustand stores for cart, wishlist, and filters
+- Pages: Home, Products, ProductDetail, Cart, Checkout, OrderSuccess
+- Supabase project connected but no tables exist yet
+- Theme: HSL-based Deep Rose primary (`340 82% 38%`), Inter + Playfair Display fonts
 
-## Build Error Fix (FIRST)
-The build error is from `jsr:@supabase/functions-js/edge-runtime.d.ts` importing `npm:openai@^4.52.5`. All edge functions import this. Fix: remove the `import "jsr:@supabase/functions-js/edge-runtime.d.ts"` line from all edge functions (it's not needed for functionality).
+## Scope
 
-**Files to fix:** All 5 edge functions currently have this import line.
-
----
-
-## Database Migration
-
-Single migration with:
-1. Add `return_number` column + sequence + trigger to `return_requests`
-2. Add `color_hex` column to `product_images`  
-3. Add missing review columns: `order_number TEXT`, `customer_name TEXT`, `customer_email TEXT` (current table has `reviewer_name` but PRD wants `customer_name`)
-4. `get_product_rating_stats()` SQL function
-5. Index on `reviews(product_id, is_approved, created_at DESC)`
-6. Fix RLS: add permissive INSERT policy for reviews (current `reviews_public_read` only allows SELECT of approved; need INSERT for guests)
-7. Wipe all dummy data from all tables + reset sequences
+This is a very large implementation. Given the constraint of doing it in a single phase, the work will be organized into logical batches executed sequentially.
 
 ---
 
-## Changes by Batch
+## Batch 1: Database Schema + Storage Buckets
 
-### Batch 1: Fix Build Error + Edge Function Cleanup
-- Remove `import "jsr:@supabase/functions-js/edge-runtime.d.ts"` from all edge functions
-- Remove `create-admin-user` and `delete-admin-user` edge functions from `config.toml` (keeping files but removing from config since Admin Management is being removed)
+Create all Supabase tables via migrations. Key adjustments from the PRD to follow best practices:
 
-### Batch 2: Remove Admin Management
-- Delete `src/pages/admin/AdminManagement.tsx`
-- Remove route from `App.tsx` (line 81)
-- Remove import of `AdminManagement` (line 32)
-- Remove from `AdminLayout.tsx` sidebar: remove `mainAdminItems` array entry for Admin Management (keep Settings)
+**Admin roles**: Use a separate `admin_roles` table with a `security definer` function (`is_admin`) to avoid infinite recursion in RLS policies. The PRD's inline subquery approach (`SELECT role FROM admins WHERE...`) would cause recursive RLS issues.
 
-### Batch 3: Remove Hardcoded Dummy Data
-- Delete `src/data/products.ts` entirely (541 lines of hardcoded products/reviews)
-- Delete `src/data/categories.ts`
-- Update `Product` type definition — move to a shared types file or inline in `useProducts.ts`
-- Update all imports that reference `@/data/products` and `@/data/categories`
-- In `useProducts.ts`: remove import of hardcoded fallbacks, return empty arrays when DB returns nothing
-- In `ProductDetail.tsx`: remove `import { products, reviews as allReviews } from "@/data/products"` and the lines using them (lines 3, 45-46)
-- In `Products.tsx`: remove `import { categories as hardcodedCategories } from "@/data/categories"` (line 3)
+**Tables to create (14 total):**
 
-### Batch 4: StarRating Component + Reviews System
-- Create `src/components/ui/StarRating.tsx` — reusable SVG star component (interactive + display modes, half-star support)
-- Update `ProductCard.tsx`: replace hardcoded `product.rating` / `product.reviewCount` with computed values from `product.reviews` array. Show nothing if 0 reviews.
-- Update `useProducts.ts`: add `reviews(rating)` to `PRODUCT_SELECT` query; update `toStorefrontProduct` to pass reviews through and compute rating dynamically
-- Update `ProductDetail.tsx`: full reviews section with rating breakdown bars, review cards, "Write a Review" form with verified purchase check via order number
-- Create review submission logic: insert into `reviews` table, verify purchase if order number provided
+1. `admins` — admin profiles linked to `auth.users`
+2. `admin_roles` — stores role per admin (main_admin / sub_admin)
+3. `categories` — product categories
+4. `products` — product catalog
+5. `product_variants` — size/color/stock per product
+6. `product_images` — image metadata
+7. `customers` — customer profiles
+8. `addresses` — customer addresses
+9. `coupons` — discount codes
+10. `orders` — order records with address snapshot
+11. `order_items` — line items per order
+12. `order_status_history` — status change log
+13. `reviews` — product reviews
+14. `support_tickets` — contact/support submissions
+15. `store_settings` — key-value store settings
 
-### Batch 5: Color Variant Switching on Product Detail
-- Add `color_hex` column to `product_images` via migration
-- Update `useProducts.ts` PRODUCT_SELECT to include `color_hex` in images query
-- Rewrite `ProductDetail.tsx` color/size selection:
-  - `selectedColor` tracks hex string (not index)
-  - Changing color filters images by `color_hex`, falls back to null (all-color) images
-  - Changing color resets size selection and image index to 0
-  - Available sizes derived from variants matching selected color
-  - Selected variant = color + size combo (needed for `variantId` in cart)
-- Update admin `ProductForm.tsx` Step 3: add per-image color assignment dropdown
+**Additional DB objects:**
 
-### Batch 6: Order Confirmation Email
-- Create `supabase/functions/send-order-confirmation/index.ts` — HTML email via Resend API
-- Update `create-order` edge function to fire-and-forget invoke `send-order-confirmation` after order success
-- Add to `config.toml`
-- Note: Requires `RESEND_API_KEY`, `FROM_EMAIL`, `SITE_URL` secrets — will prompt user to add them
+- `order_seq` sequence + `generate_order_number()` trigger
+- `daily_revenue` view
+- `inventory_summary` view
+- `is_admin()` security definer function
+- `is_main_admin()` security definer function
 
-### Batch 7: Return Flow Improvements
-- Create `src/pages/ReturnRequest.tsx` — 4-step customer return page (`/returns/request`)
-- Create `src/pages/admin/Returns.tsx` — admin returns management page (`/admin/returns`)
-- Add Returns to admin sidebar in `AdminLayout.tsx`
-- Add routes in `App.tsx`
-- Update `create-return-request` edge function to support `return_number` auto-generation
+**Storage buckets:**
 
-### Batch 8: Homepage Layout Fix
-- Update `Index.tsx` — ensure New Arrivals and Best Sellers are 2 separate sections with distinct headings
-- Update view-all links: `/products?filter=new_arrival` and `/products?filter=best_seller`
-- Reorder sections per PRD: Hero → Categories → Promo → New Arrivals → Best Sellers → Trust → Lookbook → Newsletter
+- `product-images` (public, WebP only, 50KB max)
+- `admin-avatars` (public, image/*, 200KB max)
 
-### Batch 9: Filter Fixes on Products Page
-- Add color filter UI to `Products.tsx` filter panel (color swatches from DB variants)
-- Add "New Arrivals" / "Best Sellers" / "On Sale" checkbox filters
-- Add discount tier radio filter
-- Make size filter work against `product_variants` (post-filter on fetched data, already partially works)
-- Fix price range filter to use effective price (`sale_price || base_price`)
-- Support `?filter=new_arrival` and `?filter=best_seller` URL params
-
-### Batch 10: OrderSuccess Fix + Minor Cleanups
-- Fix `OrderSuccess.tsx`: remove fallback random order number generation (line 8)
-- Ensure order number comes from URL params only
-- Fix `OrderLookup.tsx` to properly handle return eligibility (7-day window check)
+**RLS policies** on all tables using the security definer functions.
 
 ---
 
-## File Summary
+## Batch 2: Edge Functions
 
-**Delete:** `src/data/products.ts`, `src/data/categories.ts`, `src/pages/admin/AdminManagement.tsx`
+5 edge functions (all with `verify_jwt = false`, manual auth validation):
 
-**New files (~6):**
-- `src/components/ui/StarRating.tsx`
-- `src/pages/ReturnRequest.tsx`
-- `src/pages/admin/Returns.tsx`
-- `supabase/functions/send-order-confirmation/index.ts`
-- `supabase/migrations/...phase4.sql`
-
-**Modified files (~15):**
-- All 5 edge functions (remove JSR import)
-- `supabase/config.toml`
-- `src/App.tsx`
-- `src/hooks/useProducts.ts`
-- `src/components/ProductCard.tsx`
-- `src/pages/ProductDetail.tsx`
-- `src/pages/Products.tsx`
-- `src/pages/Index.tsx`
-- `src/pages/OrderSuccess.tsx`
-- `src/pages/OrderLookup.tsx`
-- `src/components/admin/AdminLayout.tsx`
-- `src/pages/admin/ProductForm.tsx`
-- `src/stores/filterStore.ts`
+1. `**create-admin-user**` — uses service role to create auth user + insert admin record
+2. `**delete-admin-user**` — uses service role to delete auth user
+3. `**validate-coupon**` — server-side coupon validation
+4. `**get-dashboard-stats**` — aggregated analytics by duration
+5. `**export-orders-csv**` — filtered order export
 
 ---
 
-## Secrets Required
-- `RESEND_API_KEY` — for order confirmation emails
-- `FROM_EMAIL` — sender address (e.g., `orders@elara.com`)
-- `SITE_URL` — deployed app URL for email links
+## Batch 3: Image Compression Utility
 
+- Create `src/utils/imageCompressor.ts` — client-side Canvas API compression to WebP < 50KB
+- No external libraries needed
+
+---
+
+## Batch 4: Admin Auth + Layout
+
+- **Admin login page** (`/admin/login`) — Supabase email/password auth, checks `admins` table + `is_active`
+- **Admin auth context/store** — Zustand store for admin session (profile, role)
+- **Admin layout shell** — dark sidebar (240px), top header, mobile drawer
+- **Route protection** — `RequireAdmin` and `RequireMainAdmin` wrapper components
+- **Admin sidebar nav** — Dashboard, Orders, Inventory, Coupons, Admin Management (main_admin only), Settings (main_admin only)
+
+---
+
+## Batch 5: Admin Dashboard
+
+- Duration selector (Today / Week / Month / Year / Lifetime)
+- 4 KPI cards (Revenue, Orders, AOV, New Customers)
+- Revenue line chart (Recharts)
+- Orders by status donut chart
+- Top selling products bar chart
+- Revenue by category bar chart
+- Recent orders table (last 10)
+- Low stock alerts
+- Quick stats row
+
+---
+
+## Batch 6: Admin Order Management
+
+- Orders list with search, filters (status, date, delivery type, payment), sorting, pagination
+- Inline status update via dropdown
+- Order detail page with status timeline, customer/shipping info, items table, admin notes
+- CSV export via edge function
+- Bulk actions (status update, export)
+
+---
+
+## Batch 7: Admin Inventory Management
+
+- Products table with search, filter, sort, status toggle
+- 4-step Add/Edit Product form:
+  1. Basic info (name, slug, category, description, material, fit, occasion, toggles)
+  2. Pricing (base price, sale price, auto discount %)
+  3. Images (drag-drop upload with compression feedback UI)
+  4. Variants (color management + stock matrix grid)
+- Delete product (soft delete, hard delete for main_admin)
+
+---
+
+## Batch 8: Admin Coupons + Admin Management + Settings
+
+- **Coupons**: CRUD table + create/edit modal, inline analytics expand
+- **Admin Management** (main_admin only): admin users table, add sub-admin (via edge function), edit, delete
+- **Settings** (main_admin only): store info, delivery settings, social links, Razorpay placeholder
+
+---
+
+## Batch 9: Customer-Facing Pages (10 pages)
+
+All using existing brand theme, Navbar, Footer:
+
+1. `/account/orders` — Guest order lookup (order# + phone)
+2. `/about` — Hero, story, values, numbers, CTA
+3. `/contact` — Contact form (inserts to `support_tickets`) + contact info
+4. `/faq` — Accordion FAQ sections
+5. `/size-guide` — Measurement chart + guide
+6. `/returns` — Return policy content
+7. `/shipping` — Shipping info content
+8. `/privacy-policy` — Privacy policy content
+9. `/terms` — Terms & conditions content
+10. `/support` — Help center with search, quick action cards, embedded FAQ + contact form
+
+---
+
+## Batch 10: Navigation & Footer Updates + Routing
+
+- Update Footer with all new page links
+- Update mobile hamburger menu
+- Add all new routes to `App.tsx`
+- Enable Supabase realtime on `orders` and `support_tickets` tables
+
+---
+
+## Technical Decisions
+
+
+| Decision            | Approach                                                                                                            |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Admin roles         | Separate `admin_roles` table + `is_admin()` / `is_main_admin()` security definer functions to prevent RLS recursion |
+| Admin user creation | Edge function with service role key (never exposed client-side)                                                     |
+| Image compression   | Client-side Canvas API, no external library                                                                         |
+| Charts              | Recharts (already installed)                                                                                        |
+| Admin state         | Zustand store for admin session                                                                                     |
+| Color theme         | Keep existing HSL variables (`340 82% 38%` primary), add admin sidebar dark colors as Tailwind utilities            |
+| Realtime            | Supabase channels for new order notifications in admin                                                              |
+| Customer auth       | Not implemented (Phase 3), guest order lookup only                                                                  |
+
+
+## Files to Create/Modify (estimated 50+ files)
+
+**New files:** ~45 component/page files, 5 edge functions, 1 utility, 1 admin store, 1 admin auth context
+**Modified files:** `App.tsx` (routes), `Footer.tsx` (links), `Navbar.tsx` (menu links), `supabase/config.toml` (edge function configs)
+
+(Delete the entire functionality related to wishlist i don't want wishlist feature in website entirely delete backend, frontend, database, each and everything related to wishlist)

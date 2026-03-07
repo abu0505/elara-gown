@@ -1,4 +1,3 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -133,6 +132,23 @@ Deno.serve(async (req) => {
       new_status: "pending",
       note: "Order placed by customer",
     });
+
+    // 7. Fire-and-forget order confirmation email
+    try {
+      const shippingAddr = `${shipping.address1}${shipping.address2 ? ', ' + shipping.address2 : ''}, ${shipping.city}, ${shipping.state} — ${shipping.pincode}`;
+      await supabase.functions.invoke("send-order-confirmation", {
+        body: {
+          orderNumber: order!.order_number,
+          customerEmail: customer.email,
+          customerName: customer.name,
+          items: orderItems,
+          totalAmount: pricing.total_amount,
+          shippingAddress: shippingAddr,
+        },
+      });
+    } catch (emailErr) {
+      console.error("Email send failed (non-blocking):", emailErr);
+    }
 
     return new Response(
       JSON.stringify({
