@@ -257,8 +257,31 @@ const ProductForm = () => {
     if (!thumbnail) { toast.error("Please upload a thumbnail image"); return; }
     setSaving(true);
     try {
+      let finalCategoryId = categoryId;
+      if (!finalCategoryId) {
+        let undefinedCat = categories.find(c => c.name.toLowerCase() === 'undefined');
+        if (undefinedCat) {
+          finalCategoryId = undefinedCat.id;
+        } else {
+          // Check DB just in case it's not active or not in state
+          const { data, error } = await supabase.from('categories').select('id').ilike('name', 'undefined').maybeSingle();
+          if (data) {
+            finalCategoryId = data.id;
+          } else {
+            // Create "Undefined" category
+            const { data: newCat, error: createErr } = await supabase.from('categories').insert({
+              name: 'Undefined',
+              slug: 'undefined',
+              is_active: true,
+            }).select('id').single();
+            if (createErr) throw createErr;
+            finalCategoryId = newCat.id;
+          }
+        }
+      }
+
       const productData = {
-        name, slug, description, category_id: categoryId || null,
+        name, slug, description, category_id: finalCategoryId,
         base_price: Number(basePrice), sale_price: salePrice ? Number(salePrice) : null,
         material, fit_type: fitType, occasion, care_instructions: careInstructions.trim() || "Dry clean only",
         is_active: isActive, is_featured: isFeatured, is_new_arrival: isNewArrival, is_best_seller: isBestSeller,

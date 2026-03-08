@@ -1,7 +1,7 @@
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { ProductSection } from "@/components/home/ProductSection";
-import { PromoBanner } from "@/components/home/PromoBanner";
+
 import { TrustBadges } from "@/components/home/TrustBadges";
 import { LookbookStrip } from "@/components/home/LookbookStrip";
 import { Newsletter } from "@/components/home/Newsletter";
@@ -15,7 +15,7 @@ const Index = () => {
     <div>
       <HeroCarousel />
       <CategoryGrid />
-      <PromoBanner />
+
       <ProductSection title="New Arrivals" products={newArrivals || []} viewAllLink="/products?filter=new_arrival" />
       <ProductSection title="Best Sellers" products={bestSellers || []} viewAllLink="/products?filter=best_seller" />
       <TrustBadges />

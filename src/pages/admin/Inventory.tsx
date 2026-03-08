@@ -95,22 +95,14 @@ const Inventory = () => {
                       <img src={imageUrl} alt={product.name} className="w-10 h-10 rounded object-cover border border-border" />
                     </TableCell>
                     <TableCell className="font-body text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="font-medium">{product.name}</div>
-                        {product.is_new_arrival && <Badge variant="secondary" className="text-[10px]">NEW</Badge>}
-                        {product.is_best_seller && <Badge variant="secondary" className="text-[10px]">BEST</Badge>}
-                      </div>
+                      <div className="font-medium">{product.name}</div>
                     </TableCell>
                     <TableCell className="font-body text-sm text-muted-foreground">{(product.categories as any)?.name || "—"}</TableCell>
                     <TableCell className="font-body text-sm">
-                      {product.sale_price ? (
-                        <div>
-                          <span className="font-medium">₹{Number(product.sale_price).toLocaleString()}</span>
-                          <span className="text-xs text-muted-foreground line-through ml-1">₹{Number(product.base_price).toLocaleString()}</span>
-                        </div>
-                      ) : (
-                        <span>₹{Number(product.base_price).toLocaleString()}</span>
-                      )}
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-muted-foreground">₹{Number(product.base_price).toLocaleString()}</span>
+                        <span className="font-medium">₹{Number(product.sale_price || product.base_price).toLocaleString()}</span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={totalStock === 0 ? "destructive" : totalStock <= 10 ? "secondary" : "secondary"} className="text-[10px]">

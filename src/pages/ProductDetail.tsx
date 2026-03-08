@@ -215,7 +215,7 @@ const ProductDetail = () => {
 
         <div className="grid md:grid-cols-2 gap-6 md:gap-10">
           {/* Image gallery */}
-          <div>
+          <div className="overflow-hidden min-w-0">
             <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-muted mb-3">
               {filteredImages[currentImage] ? (
                 <img src={filteredImages[currentImage]} alt={`${product.name}${currentColorObj ? ` - ${currentColorObj.name}` : ""}`} className="w-full h-full object-cover" width={800} height={1000} />
