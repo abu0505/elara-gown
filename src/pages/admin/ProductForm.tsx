@@ -34,6 +34,7 @@ interface ImageUpload {
   status: "ready" | "compressing" | "uploading" | "done";
   storagePath?: string;
   publicUrl?: string;
+  colorHex?: string | null;  // NEW — which color this image belongs to
 }
 
 interface ColorEntry {
