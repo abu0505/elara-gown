@@ -31,6 +31,7 @@ const AdminReturns = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [adminNote, setAdminNote] = useState("");
   const [updating, setUpdating] = useState(false);
+  const [initiateOpen, setInitiateOpen] = useState(false);
 
   useEffect(() => { fetchReturns(); }, []);
 
