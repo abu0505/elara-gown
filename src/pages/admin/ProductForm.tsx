@@ -385,6 +385,37 @@ const ProductForm = () => {
                     <X className="h-3.5 w-3.5" />
                   </button>
                   <Badge className="absolute top-2 left-2 text-[9px] bg-primary/90">Cover Image</Badge>
+                  {/* Color indicator */}
+                  {thumbnail.colorHex && (
+                    <div className="absolute top-2 left-24 flex items-center gap-1 bg-black/60 rounded-full px-2 py-1">
+                      <span className="h-3 w-3 rounded-full border border-white/30" style={{ backgroundColor: thumbnail.colorHex }} />
+                      <span className="text-[10px] text-white font-body">{colors.find(c => c.hex === thumbnail.colorHex)?.name || "Color"}</span>
+                    </div>
+                  )}
+                  {/* Color assignment strip */}
+                  {colors.length > 0 && (
+                    <div className="absolute bottom-12 left-2 right-2 bg-black/70 rounded-lg p-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[9px] text-white/70 font-body mr-1">Color:</span>
+                      <button
+                        type="button"
+                        onClick={() => setThumbnail(prev => prev ? { ...prev, colorHex: null } : null)}
+                        className={`h-5 w-5 rounded-full border flex items-center justify-center text-[9px] transition-all ${!thumbnail.colorHex ? 'border-white bg-white/20 text-white' : 'border-white/40 text-white/60 hover:border-white'}`}
+                        title="All colors"
+                      >
+                        ✕
+                      </button>
+                      {colors.map(c => (
+                        <button
+                          key={c.hex}
+                          type="button"
+                          onClick={() => setThumbnail(prev => prev ? { ...prev, colorHex: c.hex } : null)}
+                          className={`h-5 w-5 rounded-full border-2 transition-all ${thumbnail.colorHex === c.hex ? 'ring-2 ring-white ring-offset-1 ring-offset-black/70 scale-110' : 'border-white/30 hover:scale-110'}`}
+                          style={{ backgroundColor: c.hex }}
+                          title={c.name}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div
