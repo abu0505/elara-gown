@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
-import { IndianRupee, Package, TrendingUp, Users, AlertTriangle, ShoppingBag, Tag, Ticket } from "lucide-react";
+import { IndianRupee, Package, TrendingUp, Users, AlertTriangle, ShoppingBag, Tag, Ticket, RefreshCw } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
 import { Link } from "react-router-dom";
 
