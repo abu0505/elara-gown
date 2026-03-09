@@ -8,8 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { RefreshCw, Search, Eye, Loader2 } from "lucide-react";
+import { RefreshCw, Search, Eye, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import InitiateReturnDialog from "@/components/admin/InitiateReturnDialog";
 
 const STATUS_COLORS: Record<string, string> = {
   requested: "#FFA726",
