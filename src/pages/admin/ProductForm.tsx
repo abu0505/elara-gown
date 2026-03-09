@@ -311,7 +311,7 @@ const ProductForm = () => {
         const blob = blobStore.get(img.id!); if (!blob) continue;
         try {
           const result = await uploadToCloudinary(blob);
-          await supabase.from('product_images').insert({ product_id: pId, storage_path: result.public_id, public_url: result.secure_url, width: result.width, height: result.height, size_bytes: result.bytes, is_primary: false, sort_order: sortOrder++ });
+          await supabase.from('product_images').insert({ product_id: pId, storage_path: result.public_id, public_url: result.secure_url, width: result.width, height: result.height, size_bytes: result.bytes, is_primary: false, sort_order: sortOrder++, color_hex: img.colorHex || null });
           blobStore.delete(img.id!);
         } catch (err) { console.error("Gallery upload failed:", err); toast.error("Failed to upload an image."); }
       }
