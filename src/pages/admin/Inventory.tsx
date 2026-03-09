@@ -145,6 +145,8 @@ const Inventory = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CSVImportDialog open={csvOpen} onOpenChange={setCsvOpen} onImportComplete={fetchProducts} />
     </div>
   );
 };
