@@ -8,14 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Search, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import CSVImportDialog from "@/components/admin/CSVImportDialog";
 
 const Inventory = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [csvOpen, setCsvOpen] = useState(false);
 
   useEffect(() => { fetchProducts(); }, []);
 
@@ -59,6 +61,9 @@ const Inventory = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
+        <Button variant="outline" onClick={() => setCsvOpen(true)}>
+          <Upload className="h-4 w-4 mr-1" /> Import CSV
+        </Button>
         <Button asChild>
           <Link to="/admin/inventory/new"><Plus className="h-4 w-4 mr-1" /> Add Product</Link>
         </Button>
@@ -140,6 +145,8 @@ const Inventory = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CSVImportDialog open={csvOpen} onOpenChange={setCsvOpen} onImportComplete={fetchProducts} />
     </div>
   );
 };
