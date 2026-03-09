@@ -29,7 +29,7 @@ const Dashboard = () => {
   const [statusData, setStatusData] = useState<any[]>([]);
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [lowStock, setLowStock] = useState<any[]>([]);
-  const [quickStats, setQuickStats] = useState({ products: 0, coupons: 0, tickets: 0, outOfStock: 0 });
+  const [quickStats, setQuickStats] = useState({ products: 0, coupons: 0, tickets: 0, outOfStock: 0, pendingReturns: 0 });
 
   useEffect(() => {
     fetchDashboardData();
