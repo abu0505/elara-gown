@@ -88,9 +88,14 @@ const AdminReturns = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="font-heading text-lg font-bold">Return Requests</h2>
-        <Button variant="outline" size="sm" onClick={fetchReturns}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={fetchReturns}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+          </Button>
+          <Button size="sm" onClick={() => setInitiateOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" /> New Return
+          </Button>
+        </div>
       </div>
 
       <div className="relative max-w-sm">
