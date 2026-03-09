@@ -17,6 +17,7 @@ const Inventory = () => {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [csvOpen, setCsvOpen] = useState(false);
 
   useEffect(() => { fetchProducts(); }, []);
 
