@@ -134,7 +134,10 @@ const ProductForm = () => {
     }
   };
 
-  const generateSlug = (n: string) => n.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const generateSlug = (n: string) => {
+    const base = n.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    return `${base}-${Date.now().toString(36)}`;
+  };
 
   const handleCategoryChange = (value: string) => {
     if (value === "__new__") setShowNewCatDialog(true);
