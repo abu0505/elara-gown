@@ -404,7 +404,7 @@ const ProductForm = () => {
             {/* Gallery */}
             <div>
               <h3 className="font-heading text-sm font-semibold mb-3 flex items-center gap-2 text-muted-foreground uppercase tracking-wider">
-                Gallery
+                Gallery {colors.length > 0 && <span className="text-xs font-normal normal-case">(assign colors below)</span>}
               </h3>
               <div className="grid grid-cols-3 gap-2">
                 {galleryImages.map((img, i) => (
@@ -415,6 +415,13 @@ const ProductForm = () => {
                         <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
                       </div>
                     )}
+                    {/* Color indicator badge */}
+                    {img.colorHex && (
+                      <div className="absolute top-1 left-1 flex items-center gap-1 bg-black/60 rounded-full px-1.5 py-0.5">
+                        <span className="h-2.5 w-2.5 rounded-full border border-white/30" style={{ backgroundColor: img.colorHex }} />
+                        <span className="text-[8px] text-white font-body">{colors.find(c => c.hex === img.colorHex)?.name || "Color"}</span>
+                      </div>
+                    )}
                     {img.sizeKB && (
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1.5">
                         <p className="text-[8px] text-white/80 font-body truncate">
@@ -422,10 +429,33 @@ const ProductForm = () => {
                         </p>
                       </div>
                     )}
-                    <button onClick={() => setGalleryImages(prev => prev.filter((_, idx) => idx !== i))}
+                    <button onClick={() => { if (img.id) blobStore.delete(img.id); setGalleryImages(prev => prev.filter((_, idx) => idx !== i)); }}
                       className="absolute top-1 right-1 h-5 w-5 rounded-full bg-black/50 hover:bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <X className="h-3 w-3" />
                     </button>
+                    {/* Color assignment strip */}
+                    {colors.length > 0 && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => setGalleryImages(prev => prev.map((im, idx) => idx === i ? { ...im, colorHex: null } : im))}
+                          className={`h-4 w-4 rounded-full border flex items-center justify-center text-[8px] transition-all ${!img.colorHex ? 'border-white bg-white/20 text-white' : 'border-white/40 text-white/60 hover:border-white'}`}
+                          title="All colors (no specific)"
+                        >
+                          ✕
+                        </button>
+                        {colors.map(c => (
+                          <button
+                            key={c.hex}
+                            type="button"
+                            onClick={() => setGalleryImages(prev => prev.map((im, idx) => idx === i ? { ...im, colorHex: c.hex } : im))}
+                            className={`h-4 w-4 rounded-full border-2 transition-all ${img.colorHex === c.hex ? 'ring-2 ring-white ring-offset-1 ring-offset-black/70 scale-110' : 'border-white/30 hover:scale-110'}`}
+                            style={{ backgroundColor: c.hex }}
+                            title={c.name}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
                 {/* Add more button */}
@@ -438,6 +468,11 @@ const ProductForm = () => {
                   <input id="gallery-upload" type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && handleGalleryUpload(e.target.files)} />
                 </div>
               </div>
+              {colors.length === 0 && galleryImages.length > 0 && (
+                <p className="text-[10px] text-muted-foreground font-body mt-2 italic">
+                  Tip: Add colors in Variants section below to assign images to specific colors
+                </p>
+              )}
             </div>
           </div>
 
