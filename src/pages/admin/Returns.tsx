@@ -251,6 +251,12 @@ const AdminReturns = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <InitiateReturnDialog
+        open={initiateOpen}
+        onOpenChange={setInitiateOpen}
+        onSuccess={fetchReturns}
+      />
     </div>
   );
 };

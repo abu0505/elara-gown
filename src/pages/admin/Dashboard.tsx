@@ -346,6 +346,13 @@ const Dashboard = () => {
                   <p className="text-[10px] text-muted-foreground font-body">Out of Stock</p>
                 </div>
               </div>
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 min-w-0">
+                <RefreshCw className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-lg font-bold font-body">{quickStats.pendingReturns}</p>
+                  <p className="text-[10px] text-muted-foreground font-body">Pending Returns</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
