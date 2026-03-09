@@ -107,12 +107,14 @@ const Dashboard = () => {
     const { count: couponCount } = await supabase.from('coupons').select('*', { count: 'exact', head: true }).eq('is_active', true);
     const { count: ticketCount } = await supabase.from('support_tickets').select('*', { count: 'exact', head: true }).eq('status', 'open');
     const { count: oosCount } = await supabase.from('product_variants').select('*', { count: 'exact', head: true }).eq('stock_qty', 0).eq('is_active', true);
+    const { count: returnCount } = await supabase.from('return_requests').select('*', { count: 'exact', head: true }).eq('status', 'requested');
 
     setQuickStats({
       products: productCount || 0,
       coupons: couponCount || 0,
       tickets: ticketCount || 0,
       outOfStock: oosCount || 0,
+      pendingReturns: returnCount || 0,
     });
   };
 
