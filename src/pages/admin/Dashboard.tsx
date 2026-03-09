@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
-import { IndianRupee, Package, TrendingUp, Users, AlertTriangle, ShoppingBag, Tag, Ticket } from "lucide-react";
+import { IndianRupee, Package, TrendingUp, Users, AlertTriangle, ShoppingBag, Tag, Ticket, RefreshCw } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
 import { Link } from "react-router-dom";
 
@@ -29,7 +29,7 @@ const Dashboard = () => {
   const [statusData, setStatusData] = useState<any[]>([]);
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [lowStock, setLowStock] = useState<any[]>([]);
-  const [quickStats, setQuickStats] = useState({ products: 0, coupons: 0, tickets: 0, outOfStock: 0 });
+  const [quickStats, setQuickStats] = useState({ products: 0, coupons: 0, tickets: 0, outOfStock: 0, pendingReturns: 0 });
 
   useEffect(() => {
     fetchDashboardData();
@@ -107,12 +107,14 @@ const Dashboard = () => {
     const { count: couponCount } = await supabase.from('coupons').select('*', { count: 'exact', head: true }).eq('is_active', true);
     const { count: ticketCount } = await supabase.from('support_tickets').select('*', { count: 'exact', head: true }).eq('status', 'open');
     const { count: oosCount } = await supabase.from('product_variants').select('*', { count: 'exact', head: true }).eq('stock_qty', 0).eq('is_active', true);
+    const { count: returnCount } = await supabase.from('return_requests').select('*', { count: 'exact', head: true }).eq('status', 'requested');
 
     setQuickStats({
       products: productCount || 0,
       coupons: couponCount || 0,
       tickets: ticketCount || 0,
       outOfStock: oosCount || 0,
+      pendingReturns: returnCount || 0,
     });
   };
 
@@ -342,6 +344,13 @@ const Dashboard = () => {
                 <div>
                   <p className="text-lg font-bold font-body">{quickStats.outOfStock}</p>
                   <p className="text-[10px] text-muted-foreground font-body">Out of Stock</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 min-w-0">
+                <RefreshCw className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-lg font-bold font-body">{quickStats.pendingReturns}</p>
+                  <p className="text-[10px] text-muted-foreground font-body">Pending Returns</p>
                 </div>
               </div>
             </div>

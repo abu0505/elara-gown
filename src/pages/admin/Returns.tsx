@@ -8,8 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { RefreshCw, Search, Eye, Loader2 } from "lucide-react";
+import { RefreshCw, Search, Eye, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import InitiateReturnDialog from "@/components/admin/InitiateReturnDialog";
 
 const STATUS_COLORS: Record<string, string> = {
   requested: "#FFA726",
@@ -30,6 +31,7 @@ const AdminReturns = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [adminNote, setAdminNote] = useState("");
   const [updating, setUpdating] = useState(false);
+  const [initiateOpen, setInitiateOpen] = useState(false);
 
   useEffect(() => { fetchReturns(); }, []);
 
@@ -86,9 +88,14 @@ const AdminReturns = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="font-heading text-lg font-bold">Return Requests</h2>
-        <Button variant="outline" size="sm" onClick={fetchReturns}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={fetchReturns}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+          </Button>
+          <Button size="sm" onClick={() => setInitiateOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" /> New Return
+          </Button>
+        </div>
       </div>
 
       <div className="relative max-w-sm">
@@ -244,6 +251,12 @@ const AdminReturns = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <InitiateReturnDialog
+        open={initiateOpen}
+        onOpenChange={setInitiateOpen}
+        onSuccess={fetchReturns}
+      />
     </div>
   );
 };
