@@ -112,9 +112,9 @@ const ProductForm = () => {
       const primaryImg = imgs.find(img => img.is_primary);
       const galleryImgs = imgs.filter(img => !img.is_primary);
       if (primaryImg) {
-        setThumbnail({ id: primaryImg.id, preview: primaryImg.public_url, status: "done", storagePath: primaryImg.storage_path, publicUrl: primaryImg.public_url });
+        setThumbnail({ id: primaryImg.id, preview: primaryImg.public_url, status: "done", storagePath: primaryImg.storage_path, publicUrl: primaryImg.public_url, colorHex: primaryImg.color_hex || null });
       }
-      setGalleryImages(galleryImgs.map(img => ({ id: img.id, preview: img.public_url, status: "done" as const, storagePath: img.storage_path, publicUrl: img.public_url })));
+      setGalleryImages(galleryImgs.map(img => ({ id: img.id, preview: img.public_url, status: "done" as const, storagePath: img.storage_path, publicUrl: img.public_url, colorHex: img.color_hex || null })));
     }
 
     const { data: variants } = await supabase.from('product_variants').select('*').eq('product_id', productId);
