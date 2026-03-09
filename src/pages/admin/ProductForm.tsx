@@ -659,15 +659,33 @@ const ProductForm = () => {
                 </div>
                 {colors.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {colors.map(c => (
-                      <div key={c.name} className="flex items-center gap-2 bg-muted/50 rounded-full pl-1.5 pr-2 py-1 border border-border">
-                        <div className="h-5 w-5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: c.hex }} />
-                        <span className="font-body text-xs font-medium">{c.name}</span>
-                        <button onClick={() => removeColor(c.name)} className="h-4 w-4 rounded-full hover:bg-destructive/20 flex items-center justify-center"><X className="h-2.5 w-2.5" /></button>
-                      </div>
-                    ))}
+                    {colors.map(c => {
+                      const allImages = [thumbnail, ...galleryImages].filter(Boolean) as ImageUpload[];
+                      const imageCount = allImages.filter(img => img.colorHex?.toLowerCase() === c.hex.toLowerCase()).length;
+                      const hasNoImages = imageCount === 0;
+                      return (
+                        <div key={c.name} className={`flex items-center gap-2 rounded-full pl-1.5 pr-2 py-1 border ${hasNoImages ? 'bg-destructive/10 border-destructive/30' : 'bg-muted/50 border-border'}`}>
+                          <div className="h-5 w-5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: c.hex }} />
+                          <span className="font-body text-xs font-medium">{c.name}</span>
+                          <span className={`font-body text-[10px] px-1.5 py-0.5 rounded-full ${hasNoImages ? 'bg-destructive/20 text-destructive font-semibold' : 'bg-muted text-muted-foreground'}`}>
+                            {imageCount === 0 ? '⚠ 0' : imageCount} {imageCount === 1 ? 'img' : 'imgs'}
+                          </span>
+                          <button onClick={() => removeColor(c.name)} className="h-4 w-4 rounded-full hover:bg-destructive/20 flex items-center justify-center"><X className="h-2.5 w-2.5" /></button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
+                {colors.length > 0 && (() => {
+                  const allImages = [thumbnail, ...galleryImages].filter(Boolean) as ImageUpload[];
+                  const colorsWithoutImages = colors.filter(c => !allImages.some(img => img.colorHex?.toLowerCase() === c.hex.toLowerCase()));
+                  if (colorsWithoutImages.length === 0) return null;
+                  return (
+                    <p className="text-xs text-destructive font-body mt-2 flex items-center gap-1">
+                      ⚠ {colorsWithoutImages.map(c => c.name).join(', ')} {colorsWithoutImages.length === 1 ? 'has' : 'have'} no images assigned. Assign colors to images in the gallery above.
+                    </p>
+                  );
+                })()}
               </div>
 
               {/* Sizes */}
