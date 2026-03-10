@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Download, Upload, FileText, AlertTriangle, CheckCircle2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { uploadToCloudinary } from "@/utils/cloudinaryUpload";
 
 interface CSVImportDialogProps {
   open: boolean;
@@ -29,10 +30,12 @@ interface ParsedRow {
   is_featured?: string;
   is_new_arrival?: string;
   is_best_seller?: string;
-  colors?: string;
-  sizes?: string;
+  color_name?: string;
+  color_hex?: string;
+  size?: string;
   stock_qty?: string;
-  image_urls?: string;
+  thumbnail_url?: string;
+  gallery_urls?: string;
   _errors?: string[];
   _rowIndex?: number;
 }
@@ -41,9 +44,7 @@ type Step = "upload" | "preview" | "importing" | "done";
 
 const TEMPLATE_HEADERS = [
   "name", "description", "material", "fit_type", "occasion", "care_instructions",
-  "category", "base_price", "sale_price", "discount_percent",
-  "is_active", "is_featured", "is_new_arrival", "is_best_seller",
-  "colors", "sizes", "stock_qty", "image_urls"
+  "color_name", "color_hex", "size", "stock_qty", "thumbnail_url", "gallery_urls"
 ];
 
 const TEMPLATE_ROWS = [
@@ -51,13 +52,19 @@ const TEMPLATE_ROWS = [
     "Silk Maxi Dress", "A beautiful silk maxi dress", "Silk", "Regular", "Party,Wedding", "Dry clean only",
     "Dresses", "3999", "2999", "25",
     "true", "true", "true", "false",
-    "Red:#FF0000,Blue:#0000FF", "S,M,L,XL", "15", ""
+    "Red", "#FF0000", "S", "10", "https://example.com/thumb1.jpg", "https://example.com/gal1.jpg,https://example.com/gal2.jpg"
   ],
   [
-    "Cotton Kurta Set", "Comfortable cotton kurta", "Cotton", "Relaxed", "Casual,Festive", "Machine wash",
-    "Kurtas", "1999", "1499", "25",
-    "true", "false", "true", "false",
-    "White:#FFFFFF,Black:#000000", "M,L,XL", "20", ""
+    "Silk Maxi Dress", "A beautiful silk maxi dress", "Silk", "Regular", "Party,Wedding", "Dry clean only",
+    "Dresses", "3999", "2999", "25",
+    "true", "true", "true", "false",
+    "Red", "#FF0000", "M", "5", "", ""
+  ],
+  [
+    "Silk Maxi Dress", "A beautiful silk maxi dress", "Silk", "Regular", "Party,Wedding", "Dry clean only",
+    "Dresses", "3999", "2999", "25",
+    "true", "true", "true", "false",
+    "Blue", "#0000FF", "S", "15", "", ""
   ]
 ];
 
@@ -171,79 +178,135 @@ const CSVImportDialog = ({ open, onOpenChange, onImportComplete }: CSVImportDial
     const errors: { row: number; name: string; error: string }[] = [];
     let done = 0;
 
-    for (const row of validRows) {
+    // Group rows by product name
+    const productGroups = validRows.reduce((acc, row) => {
+      const gName = row.name.trim();
+      if (!acc[gName]) acc[gName] = [];
+      acc[gName].push(row);
+      return acc;
+    }, {} as Record<string, typeof validRows>);
+
+    const groupNames = Object.keys(productGroups);
+    setTotal(groupNames.length);
+
+    for (const pName of groupNames) {
+      const group = productGroups[pName];
+      const baseRow = group[0]; // Use the first row for base product details
+
       try {
-        const categoryId = await findOrCreateCategory(row.category || "");
-        const slug = row.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Date.now();
-        const occasionArr = row.occasion ? row.occasion.split(",").map(o => o.trim()).filter(Boolean) : null;
+        const categoryId = await findOrCreateCategory(baseRow.category || "");
+        const slug = baseRow.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Date.now();
+        const occasionArr = baseRow.occasion ? baseRow.occasion.split(",").map(o => o.trim()).filter(Boolean) : null;
 
         const { data: product, error: pErr } = await supabase.from("products").insert({
-          name: row.name.trim(),
+          name: baseRow.name.trim(),
           slug,
-          description: row.description || null,
-          material: row.material || null,
-          fit_type: row.fit_type || null,
+          description: baseRow.description || null,
+          material: baseRow.material || null,
+          fit_type: baseRow.fit_type || null,
           occasion: occasionArr,
-          care_instructions: row.care_instructions || null,
+          care_instructions: baseRow.care_instructions || null,
           category_id: categoryId,
-          base_price: Number(row.base_price),
-          sale_price: row.sale_price ? Number(row.sale_price) : null,
-          discount_percent: row.discount_percent ? parseInt(row.discount_percent) : null,
-          is_active: row.is_active ? parseBool(row.is_active) : true,
-          is_featured: parseBool(row.is_featured),
-          is_new_arrival: parseBool(row.is_new_arrival),
-          is_best_seller: parseBool(row.is_best_seller),
+          base_price: Number(baseRow.base_price),
+          sale_price: baseRow.sale_price ? Number(baseRow.sale_price) : null,
+          is_active: baseRow.is_active ? parseBool(baseRow.is_active) : true,
+          is_featured: parseBool(baseRow.is_featured),
+          is_new_arrival: parseBool(baseRow.is_new_arrival),
+          is_best_seller: parseBool(baseRow.is_best_seller),
         }).select("id").single();
 
         if (pErr) throw pErr;
 
-        // Parse colors & sizes, create variants
-        const colors = row.colors
-          ? row.colors.split(",").map(c => {
-              const [name, hex] = c.trim().split(":");
-              return { name: name?.trim() || "Default", hex: hex?.trim() || "#000000" };
-            })
-          : [{ name: "Default", hex: "#000000" }];
+        // Process Variants (Create one for each row in the group)
+        const variantsToInsert = group.map((row, index) => {
+          const colorName = row.color_name?.trim() || "Default";
+          const colorHex = row.color_hex?.trim() || "#000000";
+          const size = row.size?.trim() || "Free";
+          const stockQty = row.stock_qty ? parseInt(row.stock_qty) : 10;
 
-        const sizes = row.sizes ? row.sizes.split(",").map(s => s.trim()).filter(Boolean) : ["Free"];
-        const stockQty = row.stock_qty ? parseInt(row.stock_qty) : 10;
-
-        const variants = colors.flatMap(color =>
-          sizes.map(size => ({
+          return {
             product_id: product.id,
-            color_name: color.name,
-            color_hex: color.hex,
+            color_name: colorName,
+            color_hex: colorHex,
             size,
-            sku: `${slug}-${color.name}-${size}`.toUpperCase().replace(/[^A-Z0-9-]/g, ""),
+            sku: `${slug}-${colorName}-${size}-${index}`.toUpperCase().replace(/[^A-Z0-9-]/g, ""),
             stock_qty: stockQty,
-          }))
-        );
+          };
+        });
 
-        if (variants.length > 0) {
-          const { error: vErr } = await supabase.from("product_variants").insert(variants);
+        if (variantsToInsert.length > 0) {
+          const { error: vErr } = await supabase.from("product_variants").insert(variantsToInsert);
           if (vErr) throw vErr;
         }
 
-        // Insert images if provided
-        if (row.image_urls?.trim()) {
-          const urls = row.image_urls.split(",").map(u => u.trim()).filter(Boolean);
-          const images = urls.map((url, i) => ({
+        // Process Images using the baseRow (first row of group)
+        const imagesToInsert = [];
+        let sortOrder = 0;
+
+        // Process Thumbnail
+        if (baseRow.thumbnail_url?.trim()) {
+          const originalUrl = baseRow.thumbnail_url.trim();
+          let finalUrl = originalUrl;
+
+          try {
+            const response = await fetch(originalUrl);
+            if (!response.ok) throw new Error(`Fetch failed: ${response.statusText}`);
+            const blob = await response.blob();
+            const uploadResult = await uploadToCloudinary(blob);
+            finalUrl = uploadResult.secure_url;
+          } catch (imgErr) {
+            console.warn(`Failed to process thumbnail ${originalUrl} for group ${pName}:`, imgErr);
+          }
+
+          imagesToInsert.push({
             product_id: product.id,
-            public_url: url,
-            storage_path: `csv-import/${product.id}/${i}`,
-            is_primary: i === 0,
-            sort_order: i,
-          }));
-          await supabase.from("product_images").insert(images);
+            public_url: finalUrl,
+            storage_path: `csv-import/${product.id}/thumb`,
+            is_primary: true,
+            sort_order: sortOrder++,
+          });
+        }
+
+        // Process Gallery Images
+        if (baseRow.gallery_urls?.trim()) {
+          const urls = baseRow.gallery_urls.split(",").map(u => u.trim()).filter(Boolean);
+
+          for (let i = 0; i < urls.length; i++) {
+            const originalUrl = urls[i];
+            let finalUrl = originalUrl;
+
+            try {
+              const response = await fetch(originalUrl);
+              if (!response.ok) throw new Error(`Fetch failed: ${response.statusText}`);
+              const blob = await response.blob();
+              const uploadResult = await uploadToCloudinary(blob);
+              finalUrl = uploadResult.secure_url;
+            } catch (imgErr) {
+              console.warn(`Failed to process gallery image ${originalUrl} for group ${pName}:`, imgErr);
+            }
+
+            imagesToInsert.push({
+              product_id: product.id,
+              public_url: finalUrl,
+              storage_path: `csv-import/${product.id}/gallery-${i}`,
+              is_primary: false,
+              sort_order: sortOrder++,
+            });
+          }
+        }
+
+        if (imagesToInsert.length > 0) {
+          const { error: imgErr } = await supabase.from("product_images").insert(imagesToInsert);
+          if (imgErr) console.error(`Image insert error for ${pName}:`, imgErr);
         }
 
         done++;
         setImported(done);
-        setProgress(Math.round((done / validRows.length) * 100));
+        setProgress(Math.round((done / groupNames.length) * 100));
       } catch (err: any) {
-        errors.push({ row: row._rowIndex, name: row.name, error: err.message || "Unknown error" });
+        errors.push({ row: baseRow._rowIndex || 0, name: pName, error: err.message || "Unknown error" });
         done++;
-        setProgress(Math.round((done / validRows.length) * 100));
+        setProgress(Math.round((done / groupNames.length) * 100));
       }
     }
 
@@ -316,8 +379,8 @@ const CSVImportDialog = ({ open, onOpenChange, onImportComplete }: CSVImportDial
                       <TableHead className="font-body text-xs">Name</TableHead>
                       <TableHead className="font-body text-xs">Price</TableHead>
                       <TableHead className="font-body text-xs">Category</TableHead>
-                      <TableHead className="font-body text-xs">Colors</TableHead>
-                      <TableHead className="font-body text-xs">Sizes</TableHead>
+                      <TableHead className="font-body text-xs">Color</TableHead>
+                      <TableHead className="font-body text-xs">Size</TableHead>
                       <TableHead className="font-body text-xs">Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -328,8 +391,8 @@ const CSVImportDialog = ({ open, onOpenChange, onImportComplete }: CSVImportDial
                         <TableCell className="font-body text-xs font-medium">{r.name || "—"}</TableCell>
                         <TableCell className="font-body text-xs">₹{r.base_price || "—"}</TableCell>
                         <TableCell className="font-body text-xs">{r.category || "—"}</TableCell>
-                        <TableCell className="font-body text-xs">{r.colors || "—"}</TableCell>
-                        <TableCell className="font-body text-xs">{r.sizes || "—"}</TableCell>
+                        <TableCell className="font-body text-xs">{r.color_name || "—"}</TableCell>
+                        <TableCell className="font-body text-xs">{r.size || "—"}</TableCell>
                         <TableCell>
                           {r._errors.length === 0
                             ? <CheckCircle2 className="h-4 w-4 text-green-600" />

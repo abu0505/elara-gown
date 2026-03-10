@@ -27,6 +27,7 @@ const ProductDetail = () => {
 
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState("");
+  const [quantity, setQuantity] = useState(1);
   const [currentImage, setCurrentImage] = useState(0);
   const [showAllReviews, setShowAllReviews] = useState(false);
 
@@ -116,6 +117,7 @@ const ProductDetail = () => {
   const handleColorChange = (hex: string) => {
     setSelectedColor(hex);
     setSelectedSize("");
+    setQuantity(1);
     setCurrentImage(0);
   };
 
@@ -131,7 +133,7 @@ const ProductDetail = () => {
       size: selectedSize,
       color: selectedColor,
       colorName: currentColorObj.name,
-      quantity: 1,
+      quantity: quantity,
       variantId: selectedVariant?.id,
     });
     toast.success("Added to cart!");
@@ -179,7 +181,6 @@ const ProductDetail = () => {
     const { error } = await supabase.from("reviews").insert({
       product_id: product.id,
       customer_name: reviewName.trim(),
-      reviewer_name: reviewName.trim(),
       customer_email: reviewEmail.trim() || null,
       order_number: reviewOrderNumber.trim() || null,
       rating: reviewRating,
@@ -308,6 +309,23 @@ const ProductDetail = () => {
               </div>
             )}
 
+            {/* Quantity selection */}
+            <div>
+              <h3 className="text-sm font-semibold font-body mb-2">Quantity</h3>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center border border-border rounded-lg">
+                  <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={quantity <= 1}>
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="w-12 text-center font-medium font-body">{quantity}</span>
+                  <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={() => setQuantity(Math.min(10, quantity + 1))} disabled={quantity >= 10}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground font-body">Maximum 10 items per order</p>
+              </div>
+            </div>
+
             <div className="hidden md:flex gap-3">
               <Button variant="outline" className="flex-1 h-12" onClick={handleAddToCart}><ShoppingBag className="h-4 w-4 mr-2" /> Add to Cart</Button>
               <Button className="flex-1 h-12" onClick={handleBuyNow}>Buy Now</Button>
@@ -367,10 +385,10 @@ const ProductDetail = () => {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary font-body">
-                          {(r.customer_name || r.reviewer_name || "A").charAt(0)}
+                          {(r.customer_name || "A").charAt(0)}
                         </div>
                         <div>
-                          <p className="text-sm font-medium font-body">{r.customer_name || r.reviewer_name}</p>
+                          <p className="text-sm font-medium font-body">{r.customer_name}</p>
                           {r.is_verified && <Badge variant="secondary" className="text-[10px]">Verified Purchase</Badge>}
                         </div>
                       </div>

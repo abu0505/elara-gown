@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Lightbulb, Ruler } from "lucide-react";
 
 const sizes = [
   { size: "XS", bust: "32", waist: "25", hips: "35", bustCm: "81", waistCm: "64", hipsCm: "89" },
@@ -41,10 +42,11 @@ const SizeGuide = () => (
       </TableBody>
     </Table>
     <div className="mt-6 space-y-2 text-sm text-muted-foreground font-body">
-      <p>💡 If you're between sizes, we recommend sizing up for comfort.</p>
-      <p>📏 Stretch fabrics may fit differently — refer to product descriptions for fabric details.</p>
+      <p className="flex items-center gap-2"><Lightbulb className="h-4 w-4 text-primary flex-shrink-0" /> If you're between sizes, we recommend sizing up for comfort.</p>
+      <p className="flex items-center gap-2"><Ruler className="h-4 w-4 text-primary flex-shrink-0" /> Stretch fabrics may fit differently — refer to product descriptions for fabric details.</p>
     </div>
   </motion.div>
 );
 
 export default SizeGuide;
+

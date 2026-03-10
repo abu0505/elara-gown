@@ -40,11 +40,13 @@ const Orders = () => {
     fetchOrders();
   };
 
-  const filtered = orders.filter(o =>
-    !search || o.order_number?.toLowerCase().includes(search.toLowerCase()) ||
-    o.shipping_name?.toLowerCase().includes(search.toLowerCase()) ||
-    o.customer_phone?.includes(search)
-  );
+  const filtered = orders.filter(o => {
+    const name = o.shipping_name ?? o.shipping_address?.name ?? '';
+    const phone = o.customer_phone ?? o.shipping_address?.phone ?? '';
+    return !search || o.order_number?.toLowerCase().includes(search.toLowerCase()) ||
+      name.toLowerCase().includes(search.toLowerCase()) ||
+      phone.includes(search);
+  });
 
   return (
     <div className="space-y-4">
@@ -86,10 +88,10 @@ const Orders = () => {
                 <TableRow key={order.id}>
                   <TableCell className="font-mono text-xs">{order.order_number}</TableCell>
                   <TableCell className="font-body text-sm">
-                    <div>{order.shipping_name}</div>
-                    <div className="text-xs text-muted-foreground">{order.customer_phone}</div>
+                    <div>{order.shipping_name ?? order.shipping_address?.name ?? '—'}</div>
+                    <div className="text-xs text-muted-foreground">{order.customer_phone ?? order.shipping_address?.phone ?? '—'}</div>
                   </TableCell>
-                  <TableCell className="font-body text-sm">₹{Number(order.total_amount).toLocaleString()}</TableCell>
+                  <TableCell className="font-body text-sm">₹{Number(order.total_amount ?? order.total ?? 0).toLocaleString()}</TableCell>
                   <TableCell>
                     <Select value={order.status} onValueChange={(v) => updateStatus(order.id, v, order.status)}>
                       <SelectTrigger className="h-7 w-[120px] text-xs">

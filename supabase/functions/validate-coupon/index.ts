@@ -32,13 +32,13 @@ Deno.serve(async (req) => {
 
     const now = new Date();
 
-    if (coupon.valid_until && new Date(coupon.valid_until) < now) {
+    if (coupon.expires_at && new Date(coupon.expires_at) < now) {
       return new Response(JSON.stringify({ valid: false, message: "This coupon has expired" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    if (new Date(coupon.valid_from) > now) {
+    if (coupon.starts_at && new Date(coupon.starts_at) > now) {
       return new Response(JSON.stringify({ valid: false, message: "This coupon is not active yet" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -50,33 +50,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (coupon.usage_limit && coupon.usage_count >= coupon.usage_limit) {
+    if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) {
       return new Response(JSON.stringify({ valid: false, message: "Coupon usage limit reached" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Per-user limit check
-    if (customer_email && coupon.per_user_limit) {
-      const { count } = await supabase
-        .from("orders")
-        .select("*", { count: "exact", head: true })
-        .eq("coupon_code", code.toUpperCase())
-        .eq("customer_email", customer_email);
-
-      if (count !== null && count >= coupon.per_user_limit) {
-        return new Response(JSON.stringify({ valid: false, message: "You have already used this coupon" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    }
-
+    // Per-user limit check (if implemented - skipping for now as column doesn't exist)
     let discount = 0;
-    if (coupon.discount_type === "flat") {
+    if (coupon.discount_type === "flat" || coupon.discount_type === "fixed") {
       discount = Math.min(Number(coupon.discount_value), order_amount);
     } else {
       discount = (order_amount * Number(coupon.discount_value)) / 100;
-      if (coupon.max_discount_cap) discount = Math.min(discount, Number(coupon.max_discount_cap));
+      if (coupon.max_discount) discount = Math.min(discount, Number(coupon.max_discount));
     }
 
     discount = Math.round(discount);
@@ -86,7 +72,7 @@ Deno.serve(async (req) => {
       couponId: coupon.id,
       discountType: coupon.discount_type,
       discountValue: Number(coupon.discount_value),
-      maxCap: coupon.max_discount_cap,
+      maxCap: coupon.max_discount,
       discountAmount: discount,
       message: `Coupon applied! You save ₹${discount}`,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });

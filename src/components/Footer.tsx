@@ -34,9 +34,9 @@ export function Footer() {
           <h3 className="font-heading text-xl font-bold text-primary mb-3">Elara</h3>
           <p className="text-sm text-muted-foreground font-body mb-4">Curating beautiful dresses for the modern woman. Quality, style, and elegance — all in one place.</p>
           <div className="flex gap-3">
-            <a href="#" aria-label="Instagram" className="text-muted-foreground hover:text-primary transition-colors"><Instagram className="h-5 w-5" /></a>
-            <a href="#" aria-label="Facebook" className="text-muted-foreground hover:text-primary transition-colors"><Facebook className="h-5 w-5" /></a>
-            <a href="#" aria-label="YouTube" className="text-muted-foreground hover:text-primary transition-colors"><Youtube className="h-5 w-5" /></a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Follow Elara on Instagram" className="text-muted-foreground hover:text-primary transition-colors"><Instagram className="h-5 w-5" /></a>
+            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Follow Elara on Facebook" className="text-muted-foreground hover:text-primary transition-colors"><Facebook className="h-5 w-5" /></a>
+            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="Elara on YouTube" className="text-muted-foreground hover:text-primary transition-colors"><Youtube className="h-5 w-5" /></a>
           </div>
         </div>
         <div>

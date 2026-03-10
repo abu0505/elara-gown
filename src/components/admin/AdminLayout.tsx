@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, ShoppingBag, Tag, Settings, LogOut, Menu, X, Bell, RefreshCw } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, Tag, Settings, LogOut, Menu, X, Bell, RefreshCw, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Orders", href: "/admin/orders", icon: ShoppingBag },
+  { label: "Categories", href: "/admin/categories", icon: Layers },
   { label: "Inventory", href: "/admin/inventory", icon: Package },
   { label: "Coupons", href: "/admin/coupons", icon: Tag },
   { label: "Returns", href: "/admin/returns", icon: RefreshCw },

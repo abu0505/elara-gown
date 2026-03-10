@@ -32,6 +32,7 @@ import ProductForm from "./pages/admin/ProductForm";
 import Coupons from "./pages/admin/Coupons";
 import AdminReturns from "./pages/admin/Returns";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminCategories from "./pages/admin/Categories";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -79,6 +80,7 @@ const App = () => (
             <Route path="inventory" element={<Inventory />} />
             <Route path="inventory/new" element={<ProductForm />} />
             <Route path="inventory/:productId/edit" element={<ProductForm />} />
+            <Route path="categories" element={<AdminCategories />} />
             <Route path="coupons" element={<Coupons />} />
             <Route path="returns" element={<AdminReturns />} />
             <Route path="settings" element={<RequireMainAdmin><AdminSettings /></RequireMainAdmin>} />

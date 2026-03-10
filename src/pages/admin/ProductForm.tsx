@@ -286,6 +286,7 @@ const ProductForm = () => {
 
       const productData = {
         name, slug, description, category_id: finalCategoryId,
+        price: Number(basePrice),
         base_price: Number(basePrice), sale_price: salePrice ? Number(salePrice) : null,
         material, fit_type: fitType, occasion, care_instructions: careInstructions.trim() || "Dry clean only",
         is_active: isActive, is_featured: isFeatured, is_new_arrival: isNewArrival, is_best_seller: isBestSeller,
@@ -303,7 +304,7 @@ const ProductForm = () => {
         if (blob) {
           try {
             const result = await uploadToCloudinary(blob);
-            await supabase.from('product_images').insert({ product_id: pId, storage_path: result.public_id, public_url: result.secure_url, width: result.width, height: result.height, size_bytes: result.bytes, is_primary: true, sort_order: 0, color_hex: thumbnail.colorHex || null });
+            await supabase.from('product_images').insert({ product_id: pId, storage_path: result.public_id, url: result.secure_url, public_url: result.secure_url, width: result.width, height: result.height, size_bytes: result.bytes, is_primary: true, sort_order: 0, color_hex: thumbnail.colorHex || null });
             blobStore.delete(thumbnail.id);
           } catch (err) { console.error("Thumbnail upload failed:", err); toast.error("Failed to upload thumbnail."); }
         }
@@ -314,7 +315,7 @@ const ProductForm = () => {
         const blob = blobStore.get(img.id!); if (!blob) continue;
         try {
           const result = await uploadToCloudinary(blob);
-          await supabase.from('product_images').insert({ product_id: pId, storage_path: result.public_id, public_url: result.secure_url, width: result.width, height: result.height, size_bytes: result.bytes, is_primary: false, sort_order: sortOrder++, color_hex: img.colorHex || null });
+          await supabase.from('product_images').insert({ product_id: pId, storage_path: result.public_id, url: result.secure_url, public_url: result.secure_url, width: result.width, height: result.height, size_bytes: result.bytes, is_primary: false, sort_order: sortOrder++, color_hex: img.colorHex || null });
           blobStore.delete(img.id!);
         } catch (err) { console.error("Gallery upload failed:", err); toast.error("Failed to upload an image."); }
       }
@@ -323,7 +324,7 @@ const ProductForm = () => {
       const variants: any[] = [];
       for (const color of colors) {
         for (const size of enabledSizes) {
-          variants.push({ product_id: pId, size, color_name: color.name, color_hex: color.hex, sku: `${slug}-${size}-${color.name}`.toLowerCase().replace(/\s+/g, '-'), stock_qty: stockMatrix[color.name]?.[size] || 0 });
+          variants.push({ product_id: pId, size, color: color.name, color_name: color.name, color_hex: color.hex, sku: `${slug}-${size}-${color.name}`.toLowerCase().replace(/\s+/g, '-'), stock_quantity: stockMatrix[color.name]?.[size] || 0, stock_qty: stockMatrix[color.name]?.[size] || 0 });
         }
       }
       if (variants.length > 0) { await supabase.from('product_variants').insert(variants); }

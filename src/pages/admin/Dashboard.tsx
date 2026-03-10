@@ -56,20 +56,17 @@ const Dashboard = () => {
       .gte('created_at', dateFilter);
 
     const validOrders = (orders || []).filter(o => !['cancelled', 'returned', 'refunded'].includes(o.status));
-    const revenue = validOrders.reduce((sum, o) => sum + Number(o.total_amount), 0);
+    const revenue = validOrders.reduce((sum, o) => sum + Number(o.total_amount ?? (o as any).total ?? 0), 0);
     const orderCount = validOrders.length;
 
-    // Customers
-    const { count: customerCount } = await supabase
-      .from('customers')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', dateFilter);
+    // Unique customer emails as a proxy for customer count
+    const uniqueEmails = new Set((orders || []).map(o => o.customer_email).filter(Boolean));
 
     setStats({
       revenue,
       orders: orderCount,
       aov: orderCount > 0 ? Math.round(revenue / orderCount) : 0,
-      newCustomers: customerCount || 0,
+      newCustomers: uniqueEmails.size,
     });
 
     // Status breakdown
@@ -81,7 +78,7 @@ const Dashboard = () => {
     const dailyMap: Record<string, number> = {};
     validOrders.forEach(o => {
       const day = new Date(o.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
-      dailyMap[day] = (dailyMap[day] || 0) + Number(o.total_amount);
+      dailyMap[day] = (dailyMap[day] || 0) + Number(o.total_amount ?? (o as any).total ?? 0);
     });
     setRevenueData(Object.entries(dailyMap).map(([date, revenue]) => ({ date, revenue })));
 
@@ -265,8 +262,8 @@ const Dashboard = () => {
                   <TableCell className="font-mono text-xs">
                     <Link to={`/admin/orders/${order.id}`} className="text-primary hover:underline">{order.order_number}</Link>
                   </TableCell>
-                  <TableCell className="font-body text-sm">{order.shipping_name}</TableCell>
-                  <TableCell className="font-body text-sm">₹{Number(order.total_amount).toLocaleString()}</TableCell>
+                  <TableCell className="font-body text-sm">{order.shipping_name ?? (order as any).shipping_address?.name ?? '—'}</TableCell>
+                  <TableCell className="font-body text-sm">₹{Number(order.total_amount ?? (order as any).total ?? 0).toLocaleString()}</TableCell>
                   <TableCell>
                     <Badge
                       variant="secondary"

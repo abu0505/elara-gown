@@ -115,13 +115,13 @@ Deno.serve(async (req) => {
     if (pricing.coupon_id) {
       const { data: coupon } = await supabase
         .from("coupons")
-        .select("usage_count")
+        .select("used_count")
         .eq("id", pricing.coupon_id)
         .single();
       if (coupon) {
         await supabase
           .from("coupons")
-          .update({ usage_count: (coupon.usage_count || 0) + 1 })
+          .update({ used_count: (coupon.used_count || 0) + 1 })
           .eq("id", pricing.coupon_id);
       }
     }

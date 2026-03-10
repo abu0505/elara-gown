@@ -189,18 +189,20 @@ const OrderLookup = () => {
               <div className="space-y-2 text-sm font-body">
                 {items.map(item => (
                   <div key={item.id} className="flex items-center gap-3">
-                    <img src={item.product_image} alt="" className="h-12 w-12 rounded object-cover" />
-                    <div className="flex-1"><p className="font-medium">{item.product_name}</p><p className="text-xs text-muted-foreground">{item.size} / {item.color_name} × {item.quantity}</p></div>
-                    <span>₹{Number(item.line_total).toLocaleString()}</span>
+                    <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
+                      <Package className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1"><p className="font-medium">{item.product_name}</p><p className="text-xs text-muted-foreground">{item.variant_name || ''} × {item.quantity}</p></div>
+                    <span>₹{Number(item.total_price || (item.unit_price * item.quantity)).toLocaleString()}</span>
                   </div>
                 ))}
               </div>
               <Separator className="my-4" />
               <div className="text-sm font-body text-right space-y-1">
-                <p>Subtotal: ₹{Number(order.subtotal).toLocaleString()}</p>
-                {Number(order.discount_amount) > 0 && <p className="text-success">Discount: -₹{Number(order.discount_amount).toLocaleString()}</p>}
-                <p>Delivery: ₹{Number(order.delivery_charge).toLocaleString()}</p>
-                <p className="font-bold text-lg">Total: ₹{Number(order.total_amount).toLocaleString()}</p>
+                <p>Subtotal: ₹{Number(order.subtotal || 0).toLocaleString()}</p>
+                {Number(order.discount_amount ?? order.discount ?? 0) > 0 && <p className="text-success">Discount: -₹{Number(order.discount_amount ?? order.discount ?? 0).toLocaleString()}</p>}
+                <p>Delivery: ₹{Number(order.delivery_charge ?? order.shipping_cost ?? 0).toLocaleString()}</p>
+                <p className="font-bold text-lg">Total: ₹{Number(order.total_amount ?? order.total ?? 0).toLocaleString()}</p>
               </div>
 
               {/* Action buttons */}
