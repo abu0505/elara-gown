@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/ui/StarRating";
-import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
 import type { Product } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
@@ -15,29 +14,6 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, className }: ProductCardProps) {
-  const addItem = useCartStore((s) => s.addItem);
-
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (product.availableSizes.length === 0 || product.colors.length === 0) {
-      toast.error("This product is currently unavailable");
-      return;
-    }
-    addItem({
-      productId: product.id,
-      name: product.name,
-      image: product.images[0] || "",
-      price: product.price,
-      originalPrice: product.originalPrice,
-      size: product.availableSizes[0],
-      color: product.colors[0].hex,
-      colorName: product.colors[0].name,
-      quantity: 1,
-    });
-    toast.success("Added to cart!");
-  };
-
   return (
     <motion.div
       whileHover={{ y: -4 }}
@@ -72,7 +48,28 @@ export function ProductCard({ product, className }: ProductCardProps) {
           <div className="p-4 flex-1 flex flex-col">
             <div className="space-y-1.5 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] text-muted-foreground font-body uppercase tracking-widest">{product.brand}</p>
+                <div className="flex items-center gap-2 flex-1">
+                  <p className="text-[10px] text-muted-foreground font-body uppercase tracking-widest">{product.brand}</p>
+                  {product.colors && product.colors.length > 0 && (
+                    <div className="flex items-center">
+                      <div className="flex -space-x-1.5 mr-1.5">
+                        {product.colors.slice(0, 2).map((color, i) => (
+                          <div
+                            key={i}
+                            className="w-4 h-4 rounded-full border border-background shadow-sm"
+                            style={{ backgroundColor: color.hex }}
+                            title={color.name}
+                          />
+                        ))}
+                      </div>
+                      {product.colors.length > 2 && (
+                        <span className="text-[10px] text-muted-foreground font-medium">
+                          +{product.colors.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
                 {product.reviewCount > 0 && (
                   <div className="flex items-center gap-1">
                     <StarRating rating={product.rating} size="sm" />
@@ -83,6 +80,9 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 )}
               </div>
               <h3 className="text-sm font-semibold font-body line-clamp-2 group-hover:text-primary transition-colors min-h-[2.5rem]">{product.name}</h3>
+              {product.description && (
+                <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{product.description}</p>
+              )}
               <div className="pt-1">
                 {product.originalPrice > product.price ? (
                   <div className="flex flex-col md:flex-row md:items-center md:gap-2">
@@ -105,16 +105,6 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 )}
               </div>
             </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full mt-4 text-xs h-9 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 bg-background hover:bg-primary hover:text-primary-foreground border-primary/20 hover:border-primary shadow-sm"
-              onClick={handleAddToCart}
-            >
-              <ShoppingBag className="h-3.5 w-3.5 mr-2" />
-              Add to Cart
-            </Button>
           </div>
         </div>
       </Link>

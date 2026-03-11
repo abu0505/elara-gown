@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Plus, Pencil, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import CSVImportDialog from "@/components/admin/CSVImportDialog";
@@ -18,6 +19,8 @@ const Inventory = () => {
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [csvOpen, setCsvOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
 
   useEffect(() => { fetchProducts(); }, []);
 
@@ -50,9 +53,40 @@ const Inventory = () => {
     }
   };
 
+  const bulkDeleteProducts = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      const { error } = await supabase.from('products').delete().in('id', selectedIds);
+      if (error) throw error;
+      toast.success(`${selectedIds.length} products deleted successfully`);
+      setSelectedIds([]);
+      setBulkDeleteConfirm(false);
+      fetchProducts();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete products");
+      setBulkDeleteConfirm(false);
+    }
+  };
+
   const filtered = products.filter(p =>
     !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.slug.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(filtered.map(p => p.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedIds(prev => [...prev, id]);
+    } else {
+      setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -61,6 +95,13 @@ const Inventory = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
+        
+        {selectedIds.length > 0 && (
+          <Button variant="destructive" onClick={() => setBulkDeleteConfirm(true)}>
+            <Trash2 className="h-4 w-4 mr-1" /> Delete Selected ({selectedIds.length})
+          </Button>
+        )}
+        
         <Button variant="outline" onClick={() => setCsvOpen(true)}>
           <Upload className="h-4 w-4 mr-1" /> Import CSV
         </Button>
@@ -74,6 +115,13 @@ const Inventory = () => {
           <div className="overflow-x-auto"><Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[40px] text-center">
+                  <Checkbox 
+                    checked={filtered.length > 0 && selectedIds.length === filtered.length} 
+                    onCheckedChange={handleSelectAll} 
+                    aria-label="Select all"
+                  />
+                </TableHead>
                 <TableHead className="font-body text-xs w-[60px]">Image</TableHead>
                 <TableHead className="font-body text-xs">Product</TableHead>
                 <TableHead className="font-body text-xs">Category</TableHead>
@@ -93,9 +141,17 @@ const Inventory = () => {
                 const images = product.product_images || [];
                 const primaryImage = images.find((i: any) => i.is_primary) || images.sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0))[0];
                 const imageUrl = primaryImage?.public_url || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=100&q=80&fit=crop&auto=format";
+                const isSelected = selectedIds.includes(product.id);
 
                 return (
-                  <TableRow key={product.id}>
+                  <TableRow key={product.id} className={isSelected ? "bg-muted/50" : ""}>
+                    <TableCell className="text-center">
+                      <Checkbox 
+                        checked={isSelected} 
+                        onCheckedChange={(checked) => handleSelectOne(product.id, !!checked)} 
+                        aria-label={`Select ${product.name}`}
+                      />
+                    </TableCell>
                     <TableCell>
                       <img src={imageUrl} alt={product.name} className="w-10 h-10 rounded object-cover border border-border" />
                     </TableCell>
@@ -142,6 +198,17 @@ const Inventory = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
             <Button variant="destructive" onClick={deleteProduct}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-body">Delete {selectedIds.length} Products?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground font-body">This will permanently delete {selectedIds.length} selected products and all their associated data. This action cannot be undone.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDeleteConfirm(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={bulkDeleteProducts}>Delete All</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -55,6 +55,12 @@ const Products = () => {
 
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
 
+  const maxPrice = useMemo(() => {
+    if (!allProducts.length) return 200000;
+    const max = Math.max(...allProducts.map(p => p.price));
+    return Math.max(200000, Math.ceil(max / 500) * 500);
+  }, [allProducts]);
+
   const activeCats = urlCategory ? [urlCategory] : filterCats;
 
   const filtered = useMemo(() => {
@@ -122,9 +128,18 @@ const Products = () => {
       </div>
       <div>
         <h4 className="text-sm font-semibold mb-3 font-body">Price Range</h4>
-        <Slider value={priceRange} onValueChange={(v) => setPriceRange(v as [number, number])} min={0} max={15000} step={100} className="mb-2" />
+        <Slider 
+          value={[priceRange[0], priceRange[1] === Infinity ? maxPrice : priceRange[1]]} 
+          onValueChange={(v) => {
+            setPriceRange([v[0], v[1] === maxPrice ? Infinity : v[1]]);
+          }} 
+          min={0} 
+          max={maxPrice} 
+          step={500} 
+          className="mb-2" 
+        />
         <div className="flex justify-between text-xs text-muted-foreground font-body">
-          <span>₹{priceRange[0]}</span><span>₹{priceRange[1]}</span>
+          <span>₹{priceRange[0]}</span><span>₹{priceRange[1] === Infinity ? maxPrice : priceRange[1]}</span>
         </div>
       </div>
       <div>
