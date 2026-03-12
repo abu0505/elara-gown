@@ -40,7 +40,7 @@ export function CategoryGrid() {
       <h2 className="font-heading text-xl md:text-2xl font-bold text-center mb-6 md:mb-8">
         Shop by Category
       </h2>
-      <div className="grid grid-cols-3 md:flex md:grid-cols-6 gap-3 md:gap-6 justify-center items-start">
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 md:gap-6 justify-items-center items-start">
         {categories.map((cat, i) => (
           <motion.div
             key={cat.id}
