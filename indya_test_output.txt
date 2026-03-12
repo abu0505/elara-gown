@@ -1,0 +1,21 @@
+Testing first 5 URLs to see why they might fail...
+
+URL: https://www.houseofindya.com/blue-embroidered-georgette-anarkali-set-480958/iprdt
+Name: 'Blue Embroidered Georgette Anarkali With Dupatta'
+Thumbnail: 'https://img.faballey.com/images/product/XKS22062Z/1.jpg'
+
+URL: https://www.houseofindya.com/light-purple-embroidery-faux-blooming-anarkali-gown-780264/iprdt
+Name: 'Light Purple Embroidery Faux Blooming Anarkali Gown'
+Thumbnail: 'https://img.faballey.com/images/product/XKS67759Z/1.jpg'
+
+URL: https://www.houseofindya.com/maroon-thread-georgette-anarkali-set-with-dupatta-661938/iprdt
+Name: 'Maroon Thread Georgette Anarkali With Dupatta'
+Thumbnail: 'https://img.faballey.com/images/product/XKS59345A/1.jpg'
+
+URL: https://www.houseofindya.com/blue-zari-embroidered-georgette-anarkali-set-501406/iprdt
+Name: 'Blue Zari Embroidered Georgette Anarkali With Dupatta'
+Thumbnail: 'https://img.faballey.com/images/product/XKS23157D/1.jpg'
+
+URL: https://www.houseofindya.com/multi-solid-fox-georgette-anarkali-set-775255/iprdt
+Name: 'Multi Solid Fox Georgette Anarkali With Dupatta'
+Thumbnail: 'https://img.faballey.com/images/product/XKS66992Z/1.jpg'

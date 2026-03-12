@@ -1,0 +1,194 @@
+Status: 200
+Total Product elements based on generic selectors: 719
+List items found: 72
+
+=== FIRST ITEM OUTER HTML (1000 chars) ===
+<li data-product-tag="READY TO SHIP" data-pos="1" data-name="Blue Embroidered Georgette Anarkali With Dupatta" data-url="https://www.houseofindya.com/blue-embroidered-georgette-anarkali-set-480958/iprdt" data-cat="Indya Clothing/Anarkali Suit Sets" data-id="XKS22062" data-color="Blue" data-price="3221" data-variants="XKS22062Z,XKS22062A,XKS22062B,XKS22062C,XKS22062D,XKS22062E,XKS22062F,XKS22062U" data-pid="480958" unbxdparam_prank="1" unbxdparam_requestid="2d8a3946-cc50-4aa1-848c-bc631f2589f0" onclick="plistclick(this);">
+                                        <a title="Blue Embroidered Georgette Anarkali With Dupatta" href="https://www.houseofindya.com/blue-embroidered-georgette-anarkali-set-480958/iprdt" target="_blank" id="prodc_480958" class="unbxd-widget--grid__column unbxd-widget--grid__column-3 unbxd-grid unbxd-layouts--results-layout__products unbxd-widget--grid__column-6" unbxdparam_title="Blue Embroidered Georgette Anarkali With Dupatta" unbxdparam_sku="480958">
+            
+
+=== ALL ITEMS TEXT & LINKS ===
+
+[0] ID: XKS22062 Link: https://www.houseofindya.com/blue-embroidered-georgette-anarkali-set-480958/iprdt
+    Text: 55%OFF READY TO SHIP Sizes XS,S,M,L,XL,2XL,3XL,Unstitched Blue Embroidered Georgette Anarkali With Dupatta 3221.0 7158.0 15 Days Delivery
+
+[1] ID: XKS67759 Link: https://www.houseofindya.com/light-purple-embroidery-faux-blooming-anarkali-gown-780264/iprdt
+    Text: 55%OFF Sizes XS,S,M,L,XL,2XL,3XL Light Purple Embroidery Faux Blooming Anarkali Gown 3904.0 8676.0 10 Day Delivery
+
+[2] ID: XKS59345 Link: https://www.houseofindya.com/maroon-thread-georgette-anarkali-set-with-dupatta-661938/iprdt
+    Text: 55%OFF TRENDING Sizes S,M,L,XL,2XL,3XL,4XL,5XL,6XL,7XL Maroon Thread Georgette Anarkali With Dupatta 2948.0 6551.0 10 Day Delivery
+
+[3] ID: XKS23157 Link: https://www.houseofindya.com/blue-zari-embroidered-georgette-anarkali-set-501406/iprdt
+    Text: 65%OFF Sizes S,M,L,XL,2XL Blue Zari Embroidered Georgette Anarkali With Dupatta 2464.0 7040.0 10 Day Delivery
+
+[4] ID: XKS66992 Link: https://www.houseofindya.com/multi-solid-fox-georgette-anarkali-set-775255/iprdt
+    Text: 55%OFF READY TO SHIP Sizes XS,S,M,L,XL,2XL Multi Solid Fox Georgette Anarkali With Dupatta 2948.0 6551.0 15 Days Delivery
+
+=== SCRIPT TAGS WITH PRODUCT DATA ===
+
+Script index 4 length 133:
+
+        try {
+            dataLayer = [{ 'userIDHit': '02d235b2-84f3-4836-85cc-a5e904a5539e' }];
+        }
+        catch (e) {}
+    
+
+Script index 5 length 501:
+
+        (function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            }); var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : '';
+
+Script index 6 length 346:
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+	new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+	j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+	'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+	})(window,
+
+Script index 7 length 1420:
+
+
+        !function (f, b, e, v, n, t, s) {
+            if (f.fbq) return; n = f.fbq = function () {
+                n.callMethod ?
+                    n.callMethod.apply(n, arguments) : n.queue.push(arguments)
+            };
+            if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version 
+
+Script index 9 length 184:
+
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'AW-810568183');
+    
+
+Script index 11 length 10931 (LARGE):
+
+        //; window.NREUM || (NREUM = {}); NREUM.init = { privacy: { cookies_enabled: true } };
+        //window.NREUM || (NREUM = {}), __nr_require = function (e, t, n) { function r(n) { if (!t[n]) { var i = t[n] = { exports: {} }; e[n][0].call(i.exports, function (t) { var i = e[n][1][t]; return r...
+
+Script index 19 length 1961:
+
+                <div class="searchResult">
+                    <a onclick='$(".searchResult").hide();return false;'><i class="fal fa-times-circle"></i></a>
+                    {{#if didYouMean.length}}
+                    <div class="didYouMean"> Did you mean {{#each didYouMean}} <a onclick='$("#Se
+
+Script index 20 length 6464 (LARGE):
+
+    $(window).scroll(function () {
+        if ($(window).scrollTop() > $('.menuMain').offset().top && !($('.menuMain').hasClass('navfixed'))) {
+            if ($(window).width() > 250) { $('.menuMain').addClass('navfixed'); }
+        }
+        else if ($(window).scrollTop() === 0) {
+            $('...
+
+Script index 22 length 4457:
+
+       var checkingSearch =false;
+        function debounce(func, wait, immediate) {
+          var timeout;
+          return function () {
+            var context = this,
+              args = arguments;
+            var later = function () {
+              timeout = null;
+              if (!immediate
+
+Script index 24 length 13069 (LARGE):
+
+
+    function CategoryClevertapEvent() {
+        clevertap.event.push("Category Viewed", {
+            "Category Name": "Anarkali Suits",
+            "Customer Custom ID": objuser.AnonymousID,
+            "Customer ID": objuser.uname,
+            "Deeplink": "indyaapp://category/1269:2",
+          ...
+
+Script index 26 length 98203 (LARGE):
+
+
+        //var _util = new util();
+        var ItemPerPage = 72;
+        var MainCat = 1269;
+        var maxprice = 0;
+        var TotalPages = 27;
+        var ImageVersion = '0';
+        var General_ImageBaseurl = 'https://img.faballey.com/';
+        var ProductImage = "https://img.faballey.com/ i...
+
+Script index 28 length 2392:
+
+        function callunbxdfacets(curl) {
+            try {
+                var punbx = $("#hid_categorypath").attr("value").trim();
+                var things = [];
+                
+                if (curl.indexOf('/cat/') != -1) {
+                    var Allattrbutetags = curl.split('/cat/')[1];
+
+
+Script index 30 length 4473:
+
+        var requestUrl = window.location.pathname;
+        var pageName = "";
+        if (requestUrl.indexOf("/cat") > -1) { pageName = "category"; }
+        else if (requestUrl.indexOf("/iprdt") > -1) { pageName = "productpage"; }
+        else if (requestUrl == "/") { pageName = "hoi_homepage"; }
+
+
+
+=== PRODUCT DETAIL PAGE ===
+URL: https://www.houseofindya.com/blue-embroidered-georgette-anarkali-set-480958/iprdt
+
+--- Title ---
+h1: Blue Embroidered Georgette Anarkali With Dupatta - XKS22062
+
+--- Price ---
+#mrp / .mrp: 3221.0
+.dis-price: 
+
+--- Description ---
+#desc, .desc: 
+
+--- Details list ---
+
+--- Images ---
+
+JSON-LD Product data:
+
+        { "@context": "http://schema.org","@type": "Organization","name": "Indya","url": "https://www.houseofindya.com/","logo": "https://www.houseofindya.com/images/indya/logo.png","address":[{"@type": "PostalAddress","streetAddress": "High Street Essentials Pvt Ltd","addressLocality": "C-39, Sector 58", "addressRegion": "Noida","postalCode": "201301", "addressCountry": "India"}],"contactPoint": [{"@type": "ContactPoint","telephone": "[ +91-8929987349 / 0120-6850262]","contactType": "customer support","email": "customercare@houseofindya.com"}],"sameAs": ["https://www.facebook.com/houseofindya","https://twitter.com/houseofindya","https://www.instagram.com/indya","https://in.pinterest.com/houseofindya/","https://www.youtube.com/channel/UCBwiBrn7wBNsvjZyeq23Dpg"]}
+    
+
+JSON-LD Product data:
+
+        {
+        "@context" : "https://schema.org",
+        "@type" : "Product",
+        "name" : "Blue Embroidered Georgette Anarkali With Dupatta",
+        "image" : "https://img.faballey.com/images/product/XKS22062Z/1.jpg",
+        "sku" : "XKS22062Z",
+        "mpn" : "XKS22062Z",
+
+        "description" : "<p>Main Color: Blue<br/> Package Contents: 2<br/> Fabric: Georgette<br/> Neckline: V Neck<br/> Sleeves: Three Quarter Sleeves<br/> Work: Embroidered</p>",
+        "offers": {
+        "@type": "Offer",
+        "priceCurrency": "INR",
+        "price" : "3221.00",
+        "url": "https://www.houseofindya.com/blue-embroidered-georgette-anarkali-set-480958/iprdt"
+        },
+        "brand" : {
+        "@type" : "Thing",
+        "name" : "HouseOfIndya"
+        }
+
+        }
+    
