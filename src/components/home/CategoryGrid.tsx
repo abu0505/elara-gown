@@ -54,7 +54,8 @@ export function CategoryGrid() {
               to={`/products?category=${cat.id}`}
               className="flex flex-col items-center gap-2 group w-full"
             >
-              <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-2 border-border group-hover:border-primary transition-colors group-hover:scale-105 transform duration-200">
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-[2rem] overflow-hidden group-hover:scale-105 transform duration-300 shadow-md">
+                {/* 1) The Actual Category Image */}
                 <img
                   src={cat.image}
                   alt={cat.name}
@@ -63,6 +64,38 @@ export function CategoryGrid() {
                   width={112}
                   height={112}
                 />
+                
+                {/* 2) Ornate Decorative Frame SVG Overlay */}
+                {/* This frame uses a mix of golden/bronze strokes with decorative corners resembling traditional styling */}
+                <svg
+                  className="absolute inset-0 w-full h-full pointer-events-none drop-shadow-sm transition-opacity duration-300 group-hover:opacity-100 opacity-80"
+                  viewBox="0 0 100 100"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  preserveAspectRatio="none"
+                >
+                  {/* Outer border */}
+                  <rect x="2" y="2" width="96" height="96" rx="30" stroke="#C0A062" strokeWidth="1.5" />
+                  
+                  {/* Inner ornate border */}
+                  <rect x="6" y="6" width="88" height="88" rx="26" stroke="#D4AF37" strokeWidth="0.75" strokeDasharray="3 2" />
+                  
+                  {/* Top-Left Corner Ornament */}
+                  <path d="M 6 20 C 6 12, 12 6, 20 6 C 18 12, 12 18, 6 20 Z" fill="#D4AF37" opacity="0.8" />
+                  <circle cx="12" cy="12" r="1.5" fill="#FFF" />
+                  
+                  {/* Top-Right Corner Ornament */}
+                  <path d="M 94 20 C 94 12, 88 6, 80 6 C 82 12, 88 18, 94 20 Z" fill="#D4AF37" opacity="0.8" />
+                  <circle cx="88" cy="12" r="1.5" fill="#FFF" />
+                  
+                  {/* Bottom-Left Corner Ornament */}
+                  <path d="M 6 80 C 6 88, 12 94, 20 94 C 18 88, 12 82, 6 80 Z" fill="#D4AF37" opacity="0.8" />
+                  <circle cx="12" cy="88" r="1.5" fill="#FFF" />
+                  
+                  {/* Bottom-Right Corner Ornament */}
+                  <path d="M 94 80 C 94 88, 88 94, 80 94 C 82 88, 88 82, 94 80 Z" fill="#D4AF37" opacity="0.8" />
+                  <circle cx="88" cy="88" r="1.5" fill="#FFF" />
+                </svg>
               </div>
               <span className="text-xs md:text-sm font-medium text-center font-body break-words w-full px-1">{cat.name}</span>
             </Link>

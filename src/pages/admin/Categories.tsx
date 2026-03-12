@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Trash2, Edit, Plus, Upload, Loader2, Image as ImageIcon } from "lucide-react";
+import { Trash2, Edit, Plus, Upload, Loader2, Image as ImageIcon, Images } from "lucide-react";
 import { toast } from "sonner";
+import ImagePickerDialog from "@/components/admin/ImagePickerDialog";
 
 interface Category {
     id: string;
@@ -33,6 +34,7 @@ export default function AdminCategories() {
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>("");
     const [saving, setSaving] = useState(false);
+    const [showImagePicker, setShowImagePicker] = useState(false);
     const [deleting, setDeleting] = useState<string | null>(null);
 
     useEffect(() => {
@@ -289,7 +291,7 @@ export default function AdminCategories() {
                                             <Upload className="h-6 w-6" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium font-body text-foreground pb-0.5">Click to browse</p>
+                                            <p className="text-sm font-medium font-body text-foreground pb-0.5">Click to upload</p>
                                             <p className="text-xs font-body">PNG, JPG up to 5MB</p>
                                         </div>
                                     </div>
@@ -302,7 +304,28 @@ export default function AdminCategories() {
                                     onChange={(e) => e.target.files?.[0] && handleImageSelect(e.target.files[0])}
                                 />
                             </div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full gap-2 mt-1"
+                                onClick={(e) => { e.preventDefault(); setShowImagePicker(true); }}
+                            >
+                                <Images className="h-4 w-4" /> Browse Library
+                            </Button>
                         </div>
+
+                        <ImagePickerDialog
+                            open={showImagePicker}
+                            onOpenChange={setShowImagePicker}
+                            mode="single"
+                            title="Choose Category Image"
+                            onSelect={(urls) => {
+                                if (urls[0]) {
+                                    setImagePreview(urls[0]);
+                                    setImageFile(null);
+                                }
+                            }}
+                        />
 
                         <div className="flex items-center justify-between border-t border-border pt-4">
                             <div className="space-y-0.5">

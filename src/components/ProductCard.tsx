@@ -47,35 +47,36 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
           <div className="p-4 flex-1 flex flex-col">
             <div className="space-y-1.5 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 flex-1">
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-2">
                   <p className="text-[10px] text-muted-foreground font-body uppercase tracking-widest">{product.brand}</p>
-                  {product.colors && product.colors.length > 0 && (
-                    <div className="flex items-center">
-                      <div className="flex -space-x-1.5 mr-1.5">
-                        {product.colors.slice(0, 2).map((color, i) => (
-                          <div
-                            key={i}
-                            className="w-4 h-4 rounded-full border border-background shadow-sm"
-                            style={{ backgroundColor: color.hex }}
-                            title={color.name}
-                          />
-                        ))}
-                      </div>
-                      {product.colors.length > 2 && (
-                        <span className="text-[10px] text-muted-foreground font-medium">
-                          +{product.colors.length - 2}
-                        </span>
-                      )}
+                  {product.reviewCount > 0 && (
+                    <div className="flex items-center gap-1">
+                      <StarRating rating={product.rating} size="sm" />
+                      <span className="text-[10px] text-muted-foreground font-body">
+                        {product.rating} <span className="text-[9px] opacity-70">({product.reviewCount})</span>
+                      </span>
                     </div>
                   )}
                 </div>
-                {product.reviewCount > 0 && (
-                  <div className="flex items-center gap-1">
-                    <StarRating rating={product.rating} size="sm" />
-                    <span className="text-[10px] text-muted-foreground font-body">
-                      {product.rating} <span className="text-[9px] opacity-70">({product.reviewCount})</span>
-                    </span>
+
+                {product.colors && product.colors.length > 0 && (
+                  <div className="flex items-center">
+                    <div className="flex -space-x-1.5 mr-1.5">
+                      {product.colors.slice(0, 3).map((color, i) => (
+                        <div
+                          key={i}
+                          className="w-4 h-4 rounded-full border border-black/10 shadow-sm"
+                          style={{ backgroundColor: color.hex }}
+                          title={color.name}
+                        />
+                      ))}
+                    </div>
+                    {product.colors.length > 3 && (
+                      <span className="text-[10px] text-muted-foreground font-medium">
+                        +{product.colors.length - 3}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

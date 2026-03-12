@@ -284,7 +284,7 @@ const ProductDetail = () => {
                 <h3 className="text-sm font-semibold font-body mb-2">Color: <span className="font-normal text-muted-foreground">{currentColorObj?.name || ""}</span></h3>
                 <div className="flex gap-2">
                   {product.colors.map((c) => (
-                    <button key={c.hex} onClick={() => handleColorChange(c.hex)} className={cn("h-8 w-8 rounded-full border-2 transition-all", c.hex === selectedColor ? "border-primary ring-2 ring-primary/30 scale-110" : "border-border")} style={{ backgroundColor: c.hex }} aria-label={c.name} />
+                    <button key={c.hex} onClick={() => handleColorChange(c.hex)} className={cn("h-8 w-8 rounded-full border-2 transition-all", c.hex === selectedColor ? "border-primary ring-2 ring-primary/30 scale-110" : "border-black/10")} style={{ backgroundColor: c.hex }} aria-label={c.name} />
                   ))}
                 </div>
               </div>

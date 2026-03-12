@@ -1,0 +1,123 @@
+
+=== JSON-LD 0 ===
+
+	        {
+	        	"@context" : "https://schema.org",
+	            "@type" : "Organization",
+	            "name" : "Pernia's Pop Up Shop",
+	            "url" : "https://perniaspopupshop.com",
+	            "contactPoint" : [{
+	            	"@type" : "ContactPoint",
+	            	"telephone" : "+91-78478 48484",
+	            	"contactType" : "Customer Care"
+	            }],
+	            "logo" : "https://img.perniaspopupshop.com/ppus-assets/icons/ppus-logo.png",
+	            "sameAs" : [
+	            	"https://www.facebook.com/perniaspopupshop",
+	            	"https://twitter.com/PerniasPopUp",
+	            	"https://www.instagram.com/perniaspopupshop"
+	            ]
+	        }
+	    
+
+=== JSON-LD 1 ===
+
+        {
+          "@context" : "https://schema.org",
+          "@type" : "Product",
+          "name" : "Gold Net & Raw Silk Bridal Lehenga Set by Kalighata at Pernia's Pop Up Shop",
+          "image" : "https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_1.jpg",
+					"color": "Gold",
+					"material": "Raw silk, Net.",
+          "sku" : "KGTC092366",
+          "description" : "Featuring a gold lehenga in raw silk and net base. It is paired with a blouse and a dupatta. Accentuate it with emerald jewellery, embellished heels and a clutch for a bridal look.",
+          "brand" : {
+            "@type" : "Brand",
+            "name" : "Kalighata"
+          },
+          "offers": {
+            "@type": "Offer",
+            "url": "https://www.perniaspopupshop.com/kalighata-gold-net-raw-silk-lehenga-set-kgtc092366.html",
+            "priceCurrency": "INR",
+            "price": "110400",
+            "priceValidUntil": "2022-01-01",
+            "availability": "https://schema.org/InStock"
+          }
+        }
+    
+
+=== Title/Name ===
+h1: 
+.ProductName: 
+.product-name: 
+
+=== Designer ===
+
+=== Price ===
+price 0 (ProductPrice): ₹110,400₹184,00040% OFFPrice DetailsMaximum Retail Price(Incl. of taxes, excl. Customs duty)₹184,000
+price 1 (p2 m-r-10 pernia-light-grey demi-bold InitialPrice): ₹184,000
+
+=== Description ===
+desc 2 (ProductDetailRight): KalighataGold Net & Raw Silk Lehenga Set₹110,400₹184,00040% OFFPrice DetailsMaximum Retail Price(Incl. of taxes, excl. Customs duty)₹184,000Discount40% OFFSelling Price(Incl. of taxes, excl. Customs duty)₹110,400Incl. of taxes, excl. Customs dutySelect your sizeSize GuideXSS30%1 leftM40%1 leftLXLXXL3XL4XL5XL6XLBUY NOWADD TO CARTGET IN TOUCHWant the best deal, custom fit, or early delivery?CHAT WITH USPRICE MATCH PROMISEIf you find the product for less we'll match it! (T&C Applied)KNOW MOREPRODUC
+desc 3 (ProductDescription flex xs7): PRODUCT DESCRIPTIONFeaturing a gold lehenga in raw silk and net base. It is paired with a blouse and a dupatta. Accentuate it with emerald jewellery, embellished heels and a clutch for a bridal look.
+
+=== Specs/Features ===
+spec 0 (layout row wrap ProductSpec sectionSeparator): Components3 (Lehenga, Blouse, Dupatta)FITFitted at bust and waist.COMPOSITIONRaw silk, Net.CareDry clean only.
+
+=== Images ===
+img 0: src=https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_1.jpg?impolicy=stampimage, data-src=undefined, alt=undefined
+img 1: src=https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_2.jpg?impolicy=stampimage, data-src=undefined, alt=undefined
+img 2: src=https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_3.jpg?impolicy=stampimage, data-src=undefined, alt=undefined
+img 3: src=https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_4.jpg?impolicy=stampimage, data-src=undefined, alt=undefined
+img 4: src=https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_1.jpg?impolicy=detailimage&im=Blur, data-src=undefined, alt=Gold Net & Raw Silk Bridal Lehenga Set by Kalighata at Pernia's Pop Up Shop
+img 5: src=https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_1.jpg?impolicy=detailimageprod, data-src=undefined, alt=Gold Net & Raw Silk Bridal Lehenga Set by Kalighata at Pernia's Pop Up Shop
+og:image: https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_1.jpg?impolicy=listingimage
+
+=== Gallery/Slider ===
+gallery 0 (layout align-start ProductImageSlider): children=2
+  img: https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_1.jpg?impolicy=stampimage
+  img: https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_2.jpg?impolicy=stampimage
+  img: https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_3.jpg?impolicy=stampimage
+  img: https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_4.jpg?impolicy=stampimage
+  img: https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_1.jpg?impolicy=detailimage&im=Blur
+  img: https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_1.jpg?impolicy=detailimageprod
+gallery 1 (photo-gallery-thumbnail layout column align-center justify-center): children=2
+
+=== Script data ===
+script 7: 
+          // Use serialize-javascript for mitigating XSS attacks. See the following security issues:
+          // http://redux.js.org/docs/recipes/ServerRendering.html#security-considerations
+          window.__INITIAL_STATE__={"router":{"location":{"pathname":"\u002F","search":"","hash":"","key":"28lhq3"},"action":"POP"},"app":{"currency":"INR","disableDesignerRelatedProducts":{"loading":false,"err":null,"data":null},"countryList":{"loading":false,"err":null,"data":null},"isJusPayScriptsLoaded":true,"pickupStores":{"loading":false,"err":null,"data":null},"savedCardsOfCustomer":{"loading":false,"err":null,"data":null},"isPayPalScriptsLoaded":true,"isStripeScriptLoaded":true,"isRazorpayScriptLoaded":true,"imageSearch":{"visibleToAll":null,"visibleOnlyToAdmin":null},"showSearchModal":false,"showTooltip":false},"header":{"userInfo":{"loading":false,"err":null,"data":null},"menu":{"loading":false,"err":null,"data":null},"extraStaticInfo":{"loading":false,"err":null,"data":null}},"home":{"
+
+=== __INITIAL_STATE__ ===
+{"router":{"location":{"pathname":"\u002F","search":"","hash":"","key":"28lhq3"},"action":"POP"},"app":{"currency":"INR","disableDesignerRelatedProducts":{"loading":false,"err":null,"data":null},"countryList":{"loading":false,"err":null,"data":null},"isJusPayScriptsLoaded":true,"pickupStores":{"loading":false,"err":null,"data":null},"savedCardsOfCustomer":{"loading":false,"err":null,"data":null},"isPayPalScriptsLoaded":true,"isStripeScriptLoaded":true,"isRazorpayScriptLoaded":true,"imageSearch":{"visibleToAll":null,"visibleOnlyToAdmin":null},"showSearchModal":false,"showTooltip":false},"header":{"userInfo":{"loading":false,"err":null,"data":null},"menu":{"loading":false,"err":null,"data":null},"extraStaticInfo":{"loading":false,"err":null,"data":null}},"home":{"\u002Fshop\u002Fmenswear":{"loading":false,"err":null,"data":null},"\u002Fshop\u002Fjewellery-accessories":{"loading":false,"err":null,"data":null},"\u002F":{"loading":false,"err":null,"data":null},"\u002Fshop\u002Fkidswear":{"loading":false,"err":null,"data":null}},"productList":{"urlKeysForSearch":{"loading":false,"err":null,"data":null},"filters":{"loading":false,"err":null,"data":null},"category":{"loading":false,"err":null,"data":null},"selectedFilters":{},"defaultFilters":{},"isMoreProductLoading":false,"staticPageContent":{"showContent":false,"data":{}},"shopByLookData":{"loading":false,"err":null,"data":null},"showNotFoundPage":false,"imageListForAdminModal":[],"skuForAdminModal":"","clearAllFilterChips":false},"product":{"product":{"loading":false,"data":{"isSuccess":"true","msg":"Success!","result":{"currency_code":"INR","show_sizes":true,"contextual_header_category":"\u002F","price_on_request_category_wise":{},"more_by_link":[{"title":"More from Kalighata","nav_url":"designers\u002Fkalighata"},{"title":"More Lehengas","nav_url":"whats-new\u002Fethnic\u002Flehengas"},{"title":"More from SALE","nav_url":"listing\u002Ffestive-offers"}],"desktop_banners":{"desktop_banner":{"imagePath":"https:\u002F\u00
+
+Script with SKU/ID data (6): 
+        {
+          "@context" : "https://schema.org",
+          "@type" : "Product",
+          "name" : "Gold Net & Raw Silk Bridal Lehenga Set by Kalighata at Pernia's Pop Up Shop",
+          "image" : "https://img.perniaspopupshop.com/catalog/product/k/g/KGTC092366_1.jpg",
+					"color": "Gold",
+					"material": "Raw silk, Net.",
+          "sku" : "KGTC092366",
+          "description" : "Featuring a gold lehenga in raw silk and net base. It is paired with a blouse and a dupatta. Accentuate it with emerald jewellery, embellished heels and a clutch for a bridal look.",
+          "brand" : {
+            "@type" : "Brand",
+            "name" : "Kalighata"
+          },
+          "offers": {
+            "@type": "Offer",
+            "url": "https://www.perniaspopupshop.com/kalighata-gold-net-raw-silk-lehenga-set-kgtc092366.html",
+            "priceCurrency": "INR",
+            "price": "110400",
+            "priceValidUntil": "2022-01-01",
+            "availability": "https://schema.org/InStock"
+          }
+        }
+    
+
+Script with SKU/ID data (7): 
+          // Use serialize-javascript for mitigating XSS attacks. See the following security issues:
+          // http://redux.js.org/docs/recipes/ServerRendering.html#security-considerations
+          window.__INITIAL_STATE__={"router":{"location":{"pathname":"\u002F","search":"","hash":"","key":"28lhq3"},"action":"POP"},"app":{"currency":"INR","disableDesignerRelatedProducts":{"loading":false,"err":null,"data":null},"countryList":{"loading":false,"err":null,"data":null},"isJusPayScriptsLoaded":true,"pickupStores":{"loading":false,"err":null,"data":null},"savedCardsOfCustomer":{"loading":false,"err":null,"data":null},"isPayPalScriptsLoaded":true,"isStripeScriptLoaded":true,"isRazorpayScriptLoaded":true,"imageSearch":{"visibleToAll":null,"visibleOnlyToAdmin":null},"showSearchModal":false,"showTooltip":false},"header":{"userInfo":{"loading":false,"err":null,"data":null},"menu":{"loading":false,"err":null,"data":null},"extraStaticInfo":{"loading":false,"err":null,"data":null}},"home":{"\u002Fshop\u002Fmenswear":{"loading":false,"err":null,"data":null},"\u002Fshop\u002Fjewellery-accessories":{"loading":false,"err":null,"data":null},"\u002F":{"loading":false,"err":null,"data":null},"\u002Fshop\u002Fkidswear":{"loading":false,"err":null,"data":null}},"productList":{"urlKeysForSearch":{"loading":false,"err":null,"data":null},"filters":{"loading":false,"err":null,"data":null},"category":{"loading":false,"err":null,"data":null},"selectedFilters":{},"defaultFilters":{},"isMoreProduct

@@ -15,10 +15,11 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, Upload, X, Plus, Trash2, Edit, ImageIcon, Tag, Palette, Save, Eye } from "lucide-react";
+import { ArrowLeft, Upload, X, Plus, Trash2, Edit, ImageIcon, Tag, Palette, Save, Eye, Images } from "lucide-react";
 import ColorPickerPopover from "@/components/admin/ColorPickerPopover";
 import { toast } from "sonner";
 import { useAdminStore } from "@/stores/adminStore";
+import ImagePickerDialog from "@/components/admin/ImagePickerDialog";
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "Free Size"];
 const FIT_TYPES = ["Regular", "Slim", "Flared", "A-line", "Bodycon", "Straight"];
@@ -56,11 +57,13 @@ const ProductForm = () => {
   const [newCatImagePreview, setNewCatImagePreview] = useState<string>("");
   const [creatingCat, setCreatingCat] = useState(false);
   const [deletingCat, setDeletingCat] = useState(false);
+  const [showNewCatPicker, setShowNewCatPicker] = useState(false);
 
   const [showEditCatDialog, setShowEditCatDialog] = useState(false);
   const [editCatImageFile, setEditCatImageFile] = useState<File | null>(null);
   const [editCatImagePreview, setEditCatImagePreview] = useState<string>("");
   const [updatingCat, setUpdatingCat] = useState(false);
+  const [showEditCatPicker, setShowEditCatPicker] = useState(false);
 
   // Basic Info
   const [name, setName] = useState("");
@@ -83,6 +86,8 @@ const ProductForm = () => {
   // Images
   const [thumbnail, setThumbnail] = useState<ImageUpload | null>(null);
   const [galleryImages, setGalleryImages] = useState<ImageUpload[]>([]);
+  const [showThumbPicker, setShowThumbPicker] = useState(false);
+  const [showGalleryPicker, setShowGalleryPicker] = useState(false);
 
   // Variants
   const [colors, setColors] = useState<ColorEntry[]>([]);
@@ -152,13 +157,17 @@ const ProductForm = () => {
   const handleCreateCategory = async () => {
     const trimmed = newCatName.trim();
     if (!trimmed) return;
-    if (!newCatImageFile) { toast.error("Please upload a category image"); return; }
+    if (!newCatImageFile && !newCatImagePreview) { toast.error("Please upload or select a category image"); return; }
     setCreatingCat(true);
     try {
       const slug = generateSlug(trimmed);
-      const compressed = await compressImageToWebP(newCatImageFile);
-      const cloudResult = await uploadToCloudinary(compressed.blob);
-      const { data, error } = await supabase.from('categories').insert({ name: trimmed, slug, is_active: true, image_url: cloudResult.secure_url }).select('id').single();
+      let imageUrl = newCatImagePreview;
+      if (newCatImageFile) {
+        const compressed = await compressImageToWebP(newCatImageFile);
+        const cloudResult = await uploadToCloudinary(compressed.blob);
+        imageUrl = cloudResult.secure_url;
+      }
+      const { data, error } = await supabase.from('categories').insert({ name: trimmed, slug, is_active: true, image_url: imageUrl }).select('id').single();
       if (error) throw error;
       const { data: cats } = await supabase.from('categories').select('*').eq('is_active', true);
       setCategories(cats || []); setCategoryId(data.id);
@@ -286,7 +295,6 @@ const ProductForm = () => {
 
       const productData = {
         name, slug, description, category_id: finalCategoryId,
-        price: Number(basePrice),
         base_price: Number(basePrice), sale_price: salePrice ? Number(salePrice) : null,
         material, fit_type: fitType, occasion, care_instructions: careInstructions.trim() || "Dry clean only",
         is_active: isActive, is_featured: isFeatured, is_new_arrival: isNewArrival, is_best_seller: isBestSeller,
@@ -304,27 +312,36 @@ const ProductForm = () => {
         if (blob) {
           try {
             const result = await uploadToCloudinary(blob);
-            await supabase.from('product_images').insert({ product_id: pId, storage_path: result.public_id, url: result.secure_url, public_url: result.secure_url, width: result.width, height: result.height, size_bytes: result.bytes, is_primary: true, sort_order: 0, color_hex: thumbnail.colorHex || null });
+            await supabase.from('product_images').insert({ product_id: pId, storage_path: result.public_id, public_url: result.secure_url, width: result.width, height: result.height, size_bytes: result.bytes, is_primary: true, sort_order: 0, color_hex: thumbnail.colorHex || null });
             blobStore.delete(thumbnail.id);
           } catch (err) { console.error("Thumbnail upload failed:", err); toast.error("Failed to upload thumbnail."); }
         }
+      } else if (thumbnail.status === "done" && thumbnail.publicUrl && !thumbnail.id) {
+        // Library-selected image (no DB id yet) — insert new row
+        await supabase.from('product_images').insert({ product_id: pId, storage_path: thumbnail.storagePath || "", public_url: thumbnail.publicUrl, is_primary: true, sort_order: 0, color_hex: thumbnail.colorHex || null });
       }
+
       // Upload gallery
       let sortOrder = 1;
-      for (const img of galleryImages.filter(i => i.status === "ready" && i.id)) {
-        const blob = blobStore.get(img.id!); if (!blob) continue;
-        try {
-          const result = await uploadToCloudinary(blob);
-          await supabase.from('product_images').insert({ product_id: pId, storage_path: result.public_id, url: result.secure_url, public_url: result.secure_url, width: result.width, height: result.height, size_bytes: result.bytes, is_primary: false, sort_order: sortOrder++, color_hex: img.colorHex || null });
-          blobStore.delete(img.id!);
-        } catch (err) { console.error("Gallery upload failed:", err); toast.error("Failed to upload an image."); }
+      for (const img of galleryImages) {
+        if (img.status === "ready" && img.id) {
+          const blob = blobStore.get(img.id); if (!blob) continue;
+          try {
+            const result = await uploadToCloudinary(blob);
+            await supabase.from('product_images').insert({ product_id: pId, storage_path: result.public_id, public_url: result.secure_url, width: result.width, height: result.height, size_bytes: result.bytes, is_primary: false, sort_order: sortOrder++, color_hex: img.colorHex || null });
+            blobStore.delete(img.id);
+          } catch (err) { console.error("Gallery upload failed:", err); toast.error("Failed to upload an image."); }
+        } else if (img.status === "done" && img.publicUrl && !img.id) {
+          // Library-selected image (no DB id yet) — insert new row
+          await supabase.from('product_images').insert({ product_id: pId, storage_path: img.storagePath || "", public_url: img.publicUrl, is_primary: false, sort_order: sortOrder++, color_hex: img.colorHex || null });
+        }
       }
       // Variants
       if (isEdit) { await supabase.from('product_variants').delete().eq('product_id', pId); }
       const variants: any[] = [];
       for (const color of colors) {
         for (const size of enabledSizes) {
-          variants.push({ product_id: pId, size, color: color.name, color_name: color.name, color_hex: color.hex, sku: `${slug}-${size}-${color.name}`.toLowerCase().replace(/\s+/g, '-'), stock_quantity: stockMatrix[color.name]?.[size] || 0, stock_qty: stockMatrix[color.name]?.[size] || 0 });
+          variants.push({ product_id: pId, size, color_name: color.name, color_hex: color.hex, sku: `${slug}-${size}-${color.name}`.toLowerCase().replace(/\s+/g, '-'), stock_qty: stockMatrix[color.name]?.[size] || 0 });
         }
       }
       if (variants.length > 0) { await supabase.from('product_variants').insert(variants); }
@@ -392,7 +409,7 @@ const ProductForm = () => {
                   {/* Color indicator */}
                   {thumbnail.colorHex && (
                     <div className="absolute top-2 left-24 flex items-center gap-1 bg-black/60 rounded-full px-2 py-1">
-                      <span className="h-3 w-3 rounded-full border border-white/30" style={{ backgroundColor: thumbnail.colorHex }} />
+                      <span className="h-3 w-3 rounded-full border border-black/20" style={{ backgroundColor: thumbnail.colorHex }} />
                       <span className="text-[10px] text-white font-body">{colors.find(c => c.hex === thumbnail.colorHex)?.name || "Color"}</span>
                     </div>
                   )}
@@ -413,7 +430,7 @@ const ProductForm = () => {
                           key={c.hex}
                           type="button"
                           onClick={() => setThumbnail(prev => prev ? { ...prev, colorHex: c.hex } : null)}
-                          className={`h-5 w-5 rounded-full border-2 transition-all ${thumbnail.colorHex === c.hex ? 'ring-2 ring-white ring-offset-1 ring-offset-black/70 scale-110' : 'border-white/30 hover:scale-110'}`}
+                          className={`h-5 w-5 rounded-full border-2 transition-all ${thumbnail.colorHex === c.hex ? 'ring-2 ring-white ring-offset-1 ring-offset-black/70 scale-110' : 'border-black/10 hover:border-white/30 hover:scale-110'}`}
                           style={{ backgroundColor: c.hex }}
                           title={c.name}
                         />
@@ -422,18 +439,39 @@ const ProductForm = () => {
                   )}
                 </div>
               ) : (
-                <div
-                  className="border-2 border-dashed border-border rounded-2xl aspect-[3/4] flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
-                  onClick={() => document.getElementById('thumbnail-upload')?.click()}
-                >
-                  <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center mb-3">
-                    <Upload className="h-6 w-6 text-muted-foreground" />
+                <div className="space-y-2">
+                  <div
+                    className="border-2 border-dashed border-border rounded-2xl aspect-[3/4] flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all"
+                    onClick={() => document.getElementById('thumbnail-upload')?.click()}
+                  >
+                    <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center mb-3">
+                      <Upload className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-body font-medium text-foreground">Upload Thumbnail</p>
+                    <p className="text-[11px] text-muted-foreground font-body mt-1">This appears on product cards</p>
+                    <input id="thumbnail-upload" type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && handleThumbnailUpload(e.target.files)} />
                   </div>
-                  <p className="text-sm font-body font-medium text-foreground">Upload Thumbnail</p>
-                  <p className="text-[11px] text-muted-foreground font-body mt-1">This appears on product cards</p>
-                  <input id="thumbnail-upload" type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && handleThumbnailUpload(e.target.files)} />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => setShowThumbPicker(true)}
+                  >
+                    <Images className="h-4 w-4" /> Browse Library
+                  </Button>
                 </div>
               )}
+              <ImagePickerDialog
+                open={showThumbPicker}
+                onOpenChange={setShowThumbPicker}
+                mode="single"
+                title="Choose Thumbnail Image"
+                onSelect={(urls) => {
+                  if (urls[0]) {
+                    setThumbnail({ preview: urls[0], status: "done", publicUrl: urls[0], storagePath: "", colorHex: null });
+                  }
+                }}
+              />
             </div>
 
             {/* Gallery */}
@@ -453,7 +491,7 @@ const ProductForm = () => {
                     {/* Color indicator badge */}
                     {img.colorHex && (
                       <div className="absolute top-1 left-1 flex items-center gap-1 bg-black/60 rounded-full px-1.5 py-0.5">
-                        <span className="h-2.5 w-2.5 rounded-full border border-white/30" style={{ backgroundColor: img.colorHex }} />
+                        <span className="h-2.5 w-2.5 rounded-full border border-black/20" style={{ backgroundColor: img.colorHex }} />
                         <span className="text-[8px] text-white font-body">{colors.find(c => c.hex === img.colorHex)?.name || "Color"}</span>
                       </div>
                     )}
@@ -484,7 +522,7 @@ const ProductForm = () => {
                             key={c.hex}
                             type="button"
                             onClick={() => setGalleryImages(prev => prev.map((im, idx) => idx === i ? { ...im, colorHex: c.hex } : im))}
-                            className={`h-4 w-4 rounded-full border-2 transition-all ${img.colorHex === c.hex ? 'ring-2 ring-white ring-offset-1 ring-offset-black/70 scale-110' : 'border-white/30 hover:scale-110'}`}
+                            className={`h-4 w-4 rounded-full border-2 transition-all ${img.colorHex === c.hex ? 'ring-2 ring-white ring-offset-1 ring-offset-black/70 scale-110' : 'border-black/10 hover:border-white/30 hover:scale-110'}`}
                             style={{ backgroundColor: c.hex }}
                             title={c.name}
                           />
@@ -499,9 +537,33 @@ const ProductForm = () => {
                   onClick={() => document.getElementById('gallery-upload')?.click()}
                 >
                   <Plus className="h-5 w-5 text-muted-foreground mb-1" />
-                  <p className="text-[10px] text-muted-foreground font-body">Add</p>
+                  <p className="text-[10px] text-muted-foreground font-body">Upload</p>
                   <input id="gallery-upload" type="file" accept="image/*" multiple className="hidden" onChange={(e) => e.target.files && handleGalleryUpload(e.target.files)} />
                 </div>
+                {/* Browse library button */}
+                <div
+                  className="border-2 border-dashed border-border rounded-xl aspect-square flex flex-col items-center justify-center cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all"
+                  onClick={() => setShowGalleryPicker(true)}
+                >
+                  <Images className="h-5 w-5 text-muted-foreground mb-1" />
+                  <p className="text-[10px] text-muted-foreground font-body">Library</p>
+                </div>
+                <ImagePickerDialog
+                  open={showGalleryPicker}
+                  onOpenChange={setShowGalleryPicker}
+                  mode="multi"
+                  title="Add Gallery Images"
+                  onSelect={(urls) => {
+                    const newImgs: ImageUpload[] = urls.map((url) => ({
+                      preview: url,
+                      status: "done" as const,
+                      publicUrl: url,
+                      storagePath: "",
+                      colorHex: null,
+                    }));
+                    setGalleryImages((prev) => [...prev, ...newImgs]);
+                  }}
+                />
               </div>
               {colors.length === 0 && galleryImages.length > 0 && (
                 <p className="text-[10px] text-muted-foreground font-body mt-2 italic">
@@ -666,7 +728,7 @@ const ProductForm = () => {
                       const hasNoImages = imageCount === 0;
                       return (
                         <div key={c.name} className={`flex items-center gap-2 rounded-full pl-1.5 pr-2 py-1 border ${hasNoImages ? 'bg-destructive/10 border-destructive/30' : 'bg-muted/50 border-border'}`}>
-                          <div className="h-5 w-5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: c.hex }} />
+                          <div className="h-5 w-5 rounded-full border border-black/10 shadow-sm" style={{ backgroundColor: c.hex }} />
                           <span className="font-body text-xs font-medium">{c.name}</span>
                           <span className={`font-body text-[10px] px-1.5 py-0.5 rounded-full ${hasNoImages ? 'bg-destructive/20 text-destructive font-semibold' : 'bg-muted text-muted-foreground'}`}>
                             {imageCount === 0 ? '⚠ 0' : imageCount} {imageCount === 1 ? 'img' : 'imgs'}
@@ -714,7 +776,7 @@ const ProductForm = () => {
                           {colors.map(c => (
                             <th key={c.name} className="p-3 text-xs text-center font-medium">
                               <div className="flex items-center justify-center gap-1.5">
-                                <div className="h-3 w-3 rounded-full shadow-sm" style={{ backgroundColor: c.hex }} />
+                                <div className="h-3 w-3 rounded-full border border-black/10 shadow-sm" style={{ backgroundColor: c.hex }} />
                                 {c.name}
                               </div>
                             </th>
@@ -774,11 +836,15 @@ const ProductForm = () => {
                 )}
                 <input id="cat-image-upload" type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleCatImageSelect(e.target.files[0])} />
               </div>
+              <Button type="button" variant="outline" className="w-full gap-2" onClick={(e) => { e.preventDefault(); setShowNewCatPicker(true); }}>
+                <Images className="h-4 w-4" /> Browse Library
+              </Button>
+              <ImagePickerDialog open={showNewCatPicker} onOpenChange={setShowNewCatPicker} mode="single" title="Choose Category Image" onSelect={(urls) => { if (urls[0]) { setNewCatImagePreview(urls[0]); setNewCatImageFile(null); } }} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNewCatDialog(false)}>Cancel</Button>
-            <Button onClick={handleCreateCategory} disabled={creatingCat || !newCatName.trim() || !newCatImageFile}>{creatingCat ? "Creating..." : "Create"}</Button>
+            <Button onClick={handleCreateCategory} disabled={creatingCat || !newCatName.trim() || (!newCatImageFile && !newCatImagePreview)}>{creatingCat ? "Creating..." : "Create"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -803,6 +869,10 @@ const ProductForm = () => {
                 )}
                 <input id="edit-cat-image-upload" type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleEditCatImageSelect(e.target.files[0])} />
               </div>
+              <Button type="button" variant="outline" className="w-full gap-2" onClick={(e) => { e.preventDefault(); setShowEditCatPicker(true); }}>
+                <Images className="h-4 w-4" /> Browse Library
+              </Button>
+              <ImagePickerDialog open={showEditCatPicker} onOpenChange={setShowEditCatPicker} mode="single" title="Choose Category Image" onSelect={(urls) => { if (urls[0]) { setEditCatImagePreview(urls[0]); setEditCatImageFile(null); } }} />
             </div>
           </div>
           <DialogFooter>

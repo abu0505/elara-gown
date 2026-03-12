@@ -1,0 +1,363 @@
+Total ProductCard elements: 119
+
+=== FIRST CARD OUTER HTML (2000 chars) ===
+<a target="_blank" rel="opener" class="ProductCard" href="/kalighata-gold-net-raw-silk-lehenga-set-kgtc092366.html"><div class="ProductCardImageWrapper"><div class="ProductImageWrapper"><div class="FirstProductImage"><div class="DynamicHeightLoaderWrapper" style="padding-top:150%"><div class="DynamicHeightLoader layout row align-center justify-center" style="padding-top:150%"><div class="animated-bg-placeholder"></div></div></div></div><div class="HoverProductImage"><div class="DynamicHeightLoaderWrapper" style="padding-top:150%"><div class="DynamicHeightLoader layout row align-center justify-center" style="padding-top:150%"><div class="animated-bg-placeholder"></div></div></div></div></div></div><div class="ProductCardBottom"><h6 class="ProductCardTitle ellipsis demi-bold">Kalighata</h6><p class="ProductCardDescription p2 ellipsis-two-line">Gold Net &amp; Raw Silk Lehenga Set</p><div><div class="ProductPrice h6 row wrap"><span class="SpecialPrice demi-bold">₹<!-- -->110,400</span><span class="InitialPrice">₹<!-- -->184,000</span><span class="DiscountPriceRound demi-bold">40<!-- -->% OFF</span></div></div></div><div class="layout"><div class="ReadyToShip"><div class="layout align-center justify-center full-height"><img src="https://img.perniaspopupshop.com/em/megamenupro/icon/RTS2.png" alt="ready-to-ship icon"><span class="bold">SHIPS IN 10 DAYS</span></div></div></div></a>
+
+=== ALL CARDS TEXT & LINKS ===
+
+[0] Link: 
+    Text: KalighataGold Net & Raw Silk Lehenga Set₹110,400₹184,00040% OFFSHIPS IN 10 DAYS
+
+[1] Link: 
+    Text: 
+
+[2] Link: 
+    Text: KalighataGold Net & Raw Silk Lehenga Set₹110,400₹184,00040% OFF
+
+[3] Link: 
+    Text: Kalighata
+
+[4] Link: 
+    Text: Gold Net & Raw Silk Lehenga Set
+
+[5] Link: 
+    Text: KalighataPeach Tissue Hand & Machine Embroidered Saree₹116,720₹145,90020% OFF
+
+[6] Link: 
+    Text: 
+
+[7] Link: 
+    Text: KalighataPeach Tissue Hand & Machine Embroidered Saree₹116,720₹145,90020% OFF
+
+[8] Link: 
+    Text: Kalighata
+
+[9] Link: 
+    Text: Peach Tissue Hand & Machine Embroidered Saree
+
+[10] Link: 
+    Text: KalighataGrey Tissue Hand & Machine Embroidered Saree Set₹120,000₹150,00020% OFF
+
+[11] Link: 
+    Text: 
+
+[12] Link: 
+    Text: KalighataGrey Tissue Hand & Machine Embroidered Saree Set₹120,000₹150,00020% OFF
+
+[13] Link: 
+    Text: Kalighata
+
+[14] Link: 
+    Text: Grey Tissue Hand & Machine Embroidered Saree Set
+
+[15] Link: 
+    Text: KalighataGrey Tissue Hand & Machine Embroidered Saree₹108,000₹135,00020% OFF
+
+[16] Link: 
+    Text: 
+
+[17] Link: 
+    Text: KalighataGrey Tissue Hand & Machine Embroidered Saree₹108,000₹135,00020% OFF
+
+[18] Link: 
+    Text: Kalighata
+
+[19] Link: 
+    Text: Grey Tissue Hand & Machine Embroidered Saree
+
+[20] Link: 
+    Text: 
+
+[21] Link: 
+    Text: 
+
+[22] Link: 
+    Text: KalighataGolden Tissue Hand & Machine Embroidered Saree₹112,000₹140,00020% OFF
+
+[23] Link: 
+    Text: 
+
+[24] Link: 
+    Text: KalighataGolden Tissue Hand & Machine Embroidered Saree₹112,000₹140,00020% OFF
+
+[25] Link: 
+    Text: Kalighata
+
+[26] Link: 
+    Text: Golden Tissue Hand & Machine Embroidered Saree
+
+[27] Link: 
+    Text: KalighataMint Tissue Hand & Machine Embroidered Saree₹64,800₹81,00020% OFFREADY TO SHIP
+
+[28] Link: 
+    Text: 
+
+[29] Link: 
+    Text: KalighataMint Tissue Hand & Machine Embroidered Saree₹64,800₹81,00020% OFF
+
+[30] Link: 
+    Text: Kalighata
+
+[31] Link: 
+    Text: Mint Tissue Hand & Machine Embroidered Saree
+
+[32] Link: 
+    Text: KalighataPink Tissue Hand & Machine Embroidered Saree Set₹108,000₹135,00020% OFF
+
+[33] Link: 
+    Text: 
+
+[34] Link: 
+    Text: KalighataPink Tissue Hand & Machine Embroidered Saree Set₹108,000₹135,00020% OFF
+
+[35] Link: 
+    Text: Kalighata
+
+[36] Link: 
+    Text: Pink Tissue Hand & Machine Embroidered Saree Set
+
+[37] Link: 
+    Text: KalighataGolden Tissue Hand & Machine Embroidered Saree Set₹86,400₹108,00020% OFFREADY TO SHIP
+
+[38] Link: 
+    Text: 
+
+[39] Link: 
+    Text: KalighataGolden Tissue Hand & Machine Embroidered Saree Set₹86,400₹108,00020% OFF
+
+[40] Link: 
+    Text: Kalighata
+
+[41] Link: 
+    Text: Golden Tissue Hand & Machine Embroidered Saree Set
+
+[42] Link: 
+    Text: KalighataGolden Tissue Hand & Machine Embroidered Saree₹86,400₹108,00020% OFF
+
+[43] Link: 
+    Text: 
+
+[44] Link: 
+    Text: KalighataGolden Tissue Hand & Machine Embroidered Saree₹86,400₹108,00020% OFF
+
+[45] Link: 
+    Text: Kalighata
+
+[46] Link: 
+    Text: Golden Tissue Hand & Machine Embroidered Saree
+
+[47] Link: 
+    Text: KalighataGolden Tissue Hand & Machine Embroidered Saree₹128,000₹160,00020% OFF
+
+[48] Link: 
+    Text: 
+
+[49] Link: 
+    Text: KalighataGolden Tissue Hand & Machine Embroidered Saree₹128,000₹160,00020% OFF
+
+[50] Link: 
+    Text: Kalighata
+
+[51] Link: 
+    Text: Golden Tissue Hand & Machine Embroidered Saree
+
+[52] Link: 
+    Text: KalighataGolden Tissue Hand & Machine Embroidered Saree₹119,600₹149,50020% OFFREADY TO SHIP
+
+[53] Link: 
+    Text: 
+
+[54] Link: 
+    Text: KalighataGolden Tissue Hand & Machine Embroidered Saree₹119,600₹149,50020% OFF
+
+[55] Link: 
+    Text: Kalighata
+
+[56] Link: 
+    Text: Golden Tissue Hand & Machine Embroidered Saree
+
+[57] Link: 
+    Text: KalighataGrey Organza Sharara Set₹83,200₹104,00020% OFFREADY TO SHIP
+
+[58] Link: 
+    Text: 
+
+[59] Link: 
+    Text: KalighataGrey Organza Sharara Set₹83,200₹104,00020% OFF
+
+[60] Link: 
+    Text: Kalighata
+
+[61] Link: 
+    Text: Grey Organza Sharara Set
+
+[62] Link: 
+    Text: KalighataRed Chanderi Jacket Lehenga Set₹56,800₹71,00020% OFF
+
+[63] Link: 
+    Text: 
+
+[64] Link: 
+    Text: KalighataRed Chanderi Jacket Lehenga Set₹56,800₹71,00020% OFF
+
+[65] Link: 
+    Text: Kalighata
+
+[66] Link: 
+    Text: Red Chanderi Jacket Lehenga Set
+
+[67] Link: 
+    Text: KalighataMustard Chanderi Jacket Lehenga Set₹56,800₹71,00020% OFF
+
+[68] Link: 
+    Text: 
+
+[69] Link: 
+    Text: KalighataMustard Chanderi Jacket Lehenga Set₹56,800₹71,00020% OFF
+
+[70] Link: 
+    Text: Kalighata
+
+[71] Link: 
+    Text: Mustard Chanderi Jacket Lehenga Set
+
+[72] Link: 
+    Text: KalighataGreen Chanderi Silk Zardosi Embroidered Sharara Set₹83,200₹104,00020% OFFREADY TO SHIP
+
+[73] Link: 
+    Text: 
+
+[74] Link: 
+    Text: KalighataGreen Chanderi Silk Zardosi Embroidered Sharara Set₹83,200₹104,00020% OFF
+
+[75] Link: 
+    Text: Kalighata
+
+[76] Link: 
+    Text: Green Chanderi Silk Zardosi Embroidered Sharara Set
+
+[77] Link: 
+    Text: KalighataGold Organza Hand Embroidered Lehenga Set₹213,500₹305,00030% OFFSHIPS IN 10 DAYS
+
+[78] Link: 
+    Text: 
+
+[79] Link: 
+    Text: KalighataGold Organza Hand Embroidered Lehenga Set₹213,500₹305,00030% OFF
+
+[80] Link: 
+    Text: Kalighata
+
+[81] Link: 
+    Text: Gold Organza Hand Embroidered Lehenga Set
+
+[82] Link: 
+    Text: KalighataPink Raw Silk Sequins Embroidered Lehenga Set₹132,300₹189,00030% OFFREADY TO SHIP
+
+[83] Link: 
+    Text: 
+
+[84] Link: 
+    Text: KalighataPink Raw Silk Sequins Embroidered Lehenga Set₹132,300₹189,00030% OFF
+
+[85] Link: 
+    Text: Kalighata
+
+[86] Link: 
+    Text: Pink Raw Silk Sequins Embroidered Lehenga Set
+
+[87] Link: 
+    Text: KalighataGrey Tissue Hand & Machine Embroidered Saree₹119,600₹149,50020% OFFSHIPS IN 14 DAYS
+
+[88] Link: 
+    Text: 
+
+[89] Link: 
+    Text: KalighataGrey Tissue Hand & Machine Embroidered Saree₹119,600₹149,50020% OFF
+
+[90] Link: 
+    Text: Kalighata
+
+[91] Link: 
+    Text: Grey Tissue Hand & Machine Embroidered Saree
+
+[92] Link: 
+    Text: KalighataGold Tissue Hand & Machine Embroidered Saree Set₹79,200₹99,00020% OFFSHIPS IN 14 DAYS
+
+[93] Link: 
+    Text: 
+
+[94] Link: 
+    Text: KalighataGold Tissue Hand & Machine Embroidered Saree Set₹79,200₹99,00020% OFF
+
+[95] Link: 
+    Text: Kalighata
+
+[96] Link: 
+    Text: Gold Tissue Hand & Machine Embroidered Saree Set
+
+[97] Link: 
+    Text: KalighataWhite Net Sequin & Cutdana Embroidered Lehenga Set₹143,500₹205,00030% OFFSHIPS IN 14 DAYS
+
+[98] Link: 
+    Text: 
+
+[99] Link: 
+    Text: KalighataWhite Net Sequin & Cutdana Embroidered Lehenga Set₹143,500₹205,00030% OFF
+
+[100] Link: 
+    Text: Kalighata
+
+[101] Link: 
+    Text: White Net Sequin & Cutdana Embroidered Lehenga Set
+
+[102] Link: 
+    Text: KalighataGold Tissue Hand & Machine Embroidered Saree Set₹119,600₹149,50020% OFF
+
+[103] Link: 
+    Text: 
+
+[104] Link: 
+    Text: KalighataGold Tissue Hand & Machine Embroidered Saree Set₹119,600₹149,50020% OFF
+
+[105] Link: 
+    Text: Kalighata
+
+[106] Link: 
+    Text: Gold Tissue Hand & Machine Embroidered Saree Set
+
+[107] Link: 
+    Text: KalighataGold Tissue Hand & Machine Embroidered Saree Set₹108,000₹135,00020% OFF
+
+[108] Link: 
+    Text: 
+
+[109] Link: 
+    Text: KalighataGold Tissue Hand & Machine Embroidered Saree Set₹108,000₹135,00020% OFF
+
+[110] Link: 
+    Text: Kalighata
+
+[111] Link: 
+    Text: Gold Tissue Hand & Machine Embroidered Saree Set
+
+[112] Link: 
+    Text: KalighataRani Pink Raw Silk Hand & Machine Embroidered Lehenga Set₹231,700₹331,00030% OFFREADY TO SHIP
+
+[113] Link: 
+    Text: 
+
+[114] Link: 
+    Text: KalighataRani Pink Raw Silk Hand & Machine Embroidered Lehenga Set₹231,700₹331,00030% OFF
+
+[115] Link: 
+    Text: Kalighata
+
+[116] Link: 
+    Text: Rani Pink Raw Silk Hand & Machine Embroidered Lehenga Set
+
+[117] Link: 
+    Text: 
+
+[118] Link: 
+    Text: 

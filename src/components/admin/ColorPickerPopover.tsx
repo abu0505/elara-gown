@@ -165,7 +165,7 @@ export default function ColorPickerPopover({ value, colorName, onColorChange }: 
                     className="group relative h-7 w-7 rounded-full border-2 transition-all duration-150 hover:scale-125 hover:z-10 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
                     style={{
                         backgroundColor: c.hex,
-                        borderColor: isActive ? "hsl(var(--primary))" : light ? "#d1d5db" : "transparent",
+                        borderColor: isActive ? "hsl(var(--primary))" : "rgba(0,0,0,0.1)",
                         boxShadow: isActive ? "0 0 0 2px hsl(var(--primary) / 0.3)" : undefined,
                     }}
                 >
@@ -188,7 +188,7 @@ export default function ColorPickerPopover({ value, colorName, onColorChange }: 
             <PopoverTrigger asChild>
                 <button
                     type="button"
-                    className="h-9 w-12 rounded-lg border-2 border-border cursor-pointer transition-all hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 relative overflow-hidden"
+                    className="h-9 w-12 rounded-lg border-2 border-black/10 cursor-pointer transition-all hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 relative overflow-hidden"
                     style={{ backgroundColor: value }}
                     title={`${colorName || "Pick a color"} (${value})`}
                 >
@@ -260,7 +260,7 @@ export default function ColorPickerPopover({ value, colorName, onColorChange }: 
                 <div className="border-t border-border px-3 py-2.5 flex items-center gap-2 bg-muted/30">
                     {/* Live preview */}
                     <div
-                        className="h-7 w-7 rounded-md border border-border shrink-0 shadow-inner"
+                        className="h-7 w-7 rounded-md border border-black/10 shrink-0 shadow-inner"
                         style={{ backgroundColor: value }}
                     />
                     {/* Hex input */}
