@@ -1,7 +1,5 @@
-import { motion } from "framer-motion";
-
 const Terms = () => (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="container py-8 md:py-12 max-w-3xl">
+  <div className="animate-in fade-in duration-200 container py-8 md:py-12 max-w-3xl">
     <h1 className="font-heading text-2xl md:text-3xl font-bold mb-2">Terms & Conditions</h1>
     <p className="text-xs text-muted-foreground font-body mb-8">Last updated: March 2026</p>
     <div className="space-y-8 text-sm text-muted-foreground font-body">
@@ -17,7 +15,7 @@ const Terms = () => (
       <section><h2 className="font-heading text-lg font-semibold text-foreground mb-3">10. Governing Law</h2><p>These terms are governed by the laws of India. Disputes shall be subject to the exclusive jurisdiction of courts in Mumbai.</p></section>
       <section><h2 className="font-heading text-lg font-semibold text-foreground mb-3">11. Contact</h2><p>For legal inquiries, email legal@elara.store.</p></section>
     </div>
-  </motion.div>
+  </div>
 );
 
 export default Terms;

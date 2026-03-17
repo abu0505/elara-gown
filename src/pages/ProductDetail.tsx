@@ -110,9 +110,7 @@ const ProductDetail = () => {
     v => v.color_hex === selectedColor && v.size === selectedSize && v.is_active
   );
 
-  const relatedProducts = (allProducts || []).filter(
-    (p) => p.category === product.category && p.id !== product.id
-  ).slice(0, 8);
+  const relatedProducts = relatedProductsData || [];
 
   const handleColorChange = (hex: string) => {
     setSelectedColor(hex);
