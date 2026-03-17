@@ -11,7 +11,7 @@ import { SizeGuideModal } from "@/components/SizeGuideModal";
 import { ProductCard } from "@/components/ProductCard";
 import { StarRating } from "@/components/ui/StarRating";
 import { useCartStore } from "@/stores/cartStore";
-import { useProductDetail, useAllProducts } from "@/hooks/useProducts";
+import { useProductDetail, useRelatedProducts } from "@/hooks/useProducts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Minus, Plus, ShoppingBag, Truck, ChevronLeft, ChevronRight, CheckCircle, RefreshCw, Banknote, Loader2 } from "lucide-react";
@@ -22,7 +22,7 @@ const ProductDetail = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const { data: product, isLoading } = useProductDetail(productId);
-  const { data: allProducts } = useAllProducts();
+  const { data: relatedProductsData } = useRelatedProducts(product?.categoryId, product?.id, 8);
   const addItem = useCartStore((s) => s.addItem);
 
   const [selectedColor, setSelectedColor] = useState<string>("");
@@ -110,9 +110,7 @@ const ProductDetail = () => {
     v => v.color_hex === selectedColor && v.size === selectedSize && v.is_active
   );
 
-  const relatedProducts = (allProducts || []).filter(
-    (p) => p.category === product.category && p.id !== product.id
-  ).slice(0, 8);
+  const relatedProducts = relatedProductsData || [];
 
   const handleColorChange = (hex: string) => {
     setSelectedColor(hex);

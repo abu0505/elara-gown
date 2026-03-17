@@ -1,138 +1,177 @@
+# Phase 2 Implementation Plan — Admin Panel, Database Schema, and Customer Pages
 
+## Current State
 
-# Performance Optimization Analysis — Elara Storefront
+- Fully functional customer storefront with hardcoded product data (24 products, 6 categories)
+- Zustand stores for cart, wishlist, and filters
+- Pages: Home, Products, ProductDetail, Cart, Checkout, OrderSuccess
+- Supabase project connected but no tables exist yet
+- Theme: HSL-based Deep Rose primary (`340 82% 38%`), Inter + Playfair Display fonts
 
-## Current State: Critical Issues Found
+## Scope
 
-### Issue 1: Zero Code Splitting (Severity: CRITICAL)
-**Every single page** is eagerly imported in `App.tsx` — all 25+ routes including admin pages, checkout, FAQ, Terms, Privacy Policy, etc. A mobile user visiting the homepage downloads JavaScript for the entire admin panel, checkout flow, return request forms, and every static page.
-
-**Impact:** The initial JS bundle is likely **2-3x larger** than necessary. On a 4G mobile connection, this adds **2-4 seconds** to First Contentful Paint.
-
-**Fix:** Use `React.lazy()` + `Suspense` for all routes except Index and Products (the two most-visited pages). Admin routes especially should be lazy-loaded since only admins visit them.
-
-**Expected improvement:** Initial bundle size reduced by ~60-70%. First load **2-3x faster** on mobile.
-
----
-
-### Issue 2: Framer Motion Everywhere (Severity: HIGH)
-Framer Motion is imported in **21 files** across the entire app — including static text pages like Terms, Privacy Policy, Shipping, FAQ, About. This library is ~30-40KB gzipped and gets pulled into almost every chunk.
-
-Most usage is trivial: a single `<motion.div initial={{opacity:0}} animate={{opacity:1}}>` page wrapper or simple `whileInView` fade-ins that CSS can handle.
-
-**Fix:**
-- Remove framer-motion from static pages entirely (Terms, Privacy, Shipping, Returns, FAQ, About, SizeGuide) — replace with CSS `@keyframes` or Tailwind `animate-` classes
-- Keep framer-motion only where it genuinely adds value: HeroCarousel (`AnimatePresence`), SearchOverlay (`AnimatePresence`)
-- For `ProductCard` hover: use CSS `transform` instead of `motion.div whileHover`
-- For `CategoryGrid` and `TrustBadges` whileInView: use Intersection Observer + CSS transitions
-
-**Expected improvement:** ~30-40KB less JS parsed on every page. On low-end mobile devices, this saves **200-400ms** of script evaluation time.
+This is a very large implementation. Given the constraint of doing it in a single phase, the work will be organized into logical batches executed sequentially.
 
 ---
 
-### Issue 3: LookbookStrip Calls `useAllProducts()` (Severity: HIGH)
-The `LookbookStrip` component on the homepage fetches **ALL products** just to pick 6 random images. The homepage also fetches `newArrivals` and `bestSellers` separately. That's **3 Supabase queries** on homepage load, with the "all products" query being the heaviest (returns every product with all variants, images, and reviews joined).
+## Batch 1: Database Schema + Storage Buckets
 
-**Fix:** Create a dedicated `useLookbookImages()` hook that queries just `product_images` table directly (e.g., `SELECT public_url, product_id FROM product_images ORDER BY random() LIMIT 6`). This eliminates the massive all-products fetch on the homepage entirely.
+Create all Supabase tables via migrations. Key adjustments from the PRD to follow best practices:
 
-**Expected improvement:** Homepage data transfer reduced by **~80%**. Time to interactive improved by **1-2 seconds** on slow connections.
+**Admin roles**: Use a separate `admin_roles` table with a `security definer` function (`is_admin`) to avoid infinite recursion in RLS policies. The PRD's inline subquery approach (`SELECT role FROM admins WHERE...`) would cause recursive RLS issues.
 
----
+**Tables to create (14 total):**
 
-### Issue 4: ProductDetail Fetches All Products for "Related" (Severity: MEDIUM)
-`ProductDetail.tsx` calls `useAllProducts()` just to filter related products by category. This fetches every product in the database with full joins when only 8 related items are needed.
+1. `admins` — admin profiles linked to `auth.users`
+2. `admin_roles` — stores role per admin (main_admin / sub_admin)
+3. `categories` — product categories
+4. `products` — product catalog
+5. `product_variants` — size/color/stock per product
+6. `product_images` — image metadata
+7. `customers` — customer profiles
+8. `addresses` — customer addresses
+9. `coupons` — discount codes
+10. `orders` — order records with address snapshot
+11. `order_items` — line items per order
+12. `order_status_history` — status change log
+13. `reviews` — product reviews
+14. `support_tickets` — contact/support submissions
+15. `store_settings` — key-value store settings
 
-**Fix:** Create a `useRelatedProducts(categorySlug, excludeId, limit)` hook that queries with `.eq("category_id", categoryId).neq("id", excludeId).limit(8)`.
+**Additional DB objects:**
 
-**Expected improvement:** Product detail page loads **50-60% less data**.
+- `order_seq` sequence + `generate_order_number()` trigger
+- `daily_revenue` view
+- `inventory_summary` view
+- `is_admin()` security definer function
+- `is_main_admin()` security definer function
 
----
+**Storage buckets:**
 
-### Issue 5: No Image Optimization Strategy (Severity: MEDIUM)
-- Hero carousel images are Unsplash URLs at `w=1200` — on a 360px mobile viewport, this is **3.3x larger than needed**
-- Product card images load at full resolution despite being displayed at ~160-200px wide
-- No `srcset` or responsive image sizing
-- Category grid images load at full resolution for 80px thumbnails
-- Hero images are not preloaded — the first visible content on the page loads lazily
+- `product-images` (public, WebP only, 50KB max)
+- `admin-avatars` (public, image/*, 200KB max)
 
-**Fix:**
-- Add `srcset` with breakpoint-appropriate sizes to product images
-- For Unsplash/Cloudinary URLs: append width/quality parameters based on display context (e.g., `w=400` for cards, `w=800` for detail, `w=600` for mobile hero)
-- Add `<link rel="preload">` for the first hero slide image
-- Add `fetchpriority="high"` to hero and remove `loading="lazy"` from above-the-fold images
-- Use `loading="lazy"` only for below-fold content (already done for product cards — good)
-
-**Expected improvement:** Image payload reduced by **50-70%** on mobile. LCP improved by **1-2 seconds**.
-
----
-
-### Issue 6: No Virtualization on Products Grid (Severity: MEDIUM)
-The Products page renders all visible products as DOM nodes (up to `visibleCount` which increments by 12). With 100+ products after several "Load More" clicks, the DOM becomes heavy. Each `ProductCard` includes a `motion.div` wrapper adding overhead.
-
-**Fix:** For the current "Load More" pagination approach, this is acceptable for moderate catalogs (<200 products). But if the catalog grows, consider `react-window` or `@tanstack/react-virtual` for the grid. More impactful is removing the `motion.div` wrapper from `ProductCard` (see Issue 2).
-
-**Expected improvement:** Minor for now; prevents degradation at scale.
+**RLS policies** on all tables using the security definer functions.
 
 ---
 
-### Issue 7: Google Fonts Blocking Render (Severity: MEDIUM)
-`index.css` line 1 imports two Google Font families (Inter + Playfair Display) with multiple weights via `@import`. This is **render-blocking** — the browser cannot paint text until both font files download.
+## Batch 2: Edge Functions
 
-**Fix:**
-- Move the Google Fonts `<link>` to `index.html` `<head>` with `rel="preload"` or `font-display: swap`
-- Better yet, add `&display=swap` to the Google Fonts URL to show fallback text immediately
-- Consider self-hosting the fonts for faster delivery
+5 edge functions (all with `verify_jwt = false`, manual auth validation):
 
-**Expected improvement:** First Contentful Paint improved by **300-800ms** on mobile (eliminates font-blocking).
-
----
-
-### Issue 8: SearchOverlay Fetches All Products on Mount (Severity: LOW-MEDIUM)
-`SearchOverlay` uses `useAllProducts()` and filters client-side. Even when search is closed, if the query is already cached it's fine, but the overlay component still processes the full product array on every keystroke.
-
-**Fix:** Use `useDeferredValue` for the search input, or debounce the filter. If the overlay is frequently opened, this is already cached via React Query — low priority.
+1. `**create-admin-user**` — uses service role to create auth user + insert admin record
+2. `**delete-admin-user**` — uses service role to delete auth user
+3. `**validate-coupon**` — server-side coupon validation
+4. `**get-dashboard-stats**` — aggregated analytics by duration
+5. `**export-orders-csv**` — filtered order export
 
 ---
 
-## Summary Table
+## Batch 3: Image Compression Utility
 
-```text
-┌─────────────────────────────────┬──────────┬─────────────────────┐
-│ Optimization                    │ Effort   │ Impact              │
-├─────────────────────────────────┼──────────┼─────────────────────┤
-│ 1. Route-level code splitting   │ Medium   │ 2-3x faster initial │
-│ 2. Remove framer-motion bloat   │ Medium   │ ~400ms faster parse │
-│ 3. Fix LookbookStrip query      │ Low      │ 80% less homepage   │
-│ 4. Fix ProductDetail query      │ Low      │ 50-60% less data    │
-│ 5. Responsive images + preload  │ Medium   │ 1-2s faster LCP     │
-│ 6. Remove motion from cards     │ Low      │ Smoother scrolling  │
-│ 7. Fix font loading             │ Low      │ 300-800ms faster FCP│
-│ 8. Debounce search              │ Low      │ Smoother UX         │
-└─────────────────────────────────┴──────────┴─────────────────────┘
-```
+- Create `src/utils/imageCompressor.ts` — client-side Canvas API compression to WebP < 50KB
+- No external libraries needed
 
-## Overall Expected Improvement
+---
 
-Implementing all optimizations together:
-- **First Contentful Paint:** 3-5x faster on mobile (from ~4-6s down to ~1-1.5s)
-- **Largest Contentful Paint:** 2-3x faster (hero image loads sooner)
-- **Time to Interactive:** 2-3x faster (smaller JS bundle = less parsing)
-- **Total data transferred on first visit:** Reduced by ~60-70%
+## Batch 4: Admin Auth + Layout
 
-The highest-ROI changes are **#1 (code splitting)**, **#3 (fix LookbookStrip query)**, **#7 (font loading)**, and **#5 (image optimization)** — these four alone would deliver a **3-4x improvement** in perceived mobile performance.
+- **Admin login page** (`/admin/login`) — Supabase email/password auth, checks `admins` table + `is_active`
+- **Admin auth context/store** — Zustand store for admin session (profile, role)
+- **Admin layout shell** — dark sidebar (240px), top header, mobile drawer
+- **Route protection** — `RequireAdmin` and `RequireMainAdmin` wrapper components
+- **Admin sidebar nav** — Dashboard, Orders, Inventory, Coupons, Admin Management (main_admin only), Settings (main_admin only)
 
-## Approach Options
+---
 
-**Approach A — Surgical (2-3 changes, biggest bang):**
-Implement only #1, #3, and #7. Fastest to ship, delivers ~70% of the total improvement. Best if you want quick wins.
+## Batch 5: Admin Dashboard
 
-**Approach B — Comprehensive (all 8):**
-Implement everything. Delivers the full 3-5x improvement. Takes longer but results in a production-grade optimized storefront.
+- Duration selector (Today / Week / Month / Year / Lifetime)
+- 4 KPI cards (Revenue, Orders, AOV, New Customers)
+- Revenue line chart (Recharts)
+- Orders by status donut chart
+- Top selling products bar chart
+- Revenue by category bar chart
+- Recent orders table (last 10)
+- Low stock alerts
+- Quick stats row
 
-**Approach C — Progressive (phased):**
-Phase 1: #1, #3, #7 (code splitting, query fix, fonts) — immediate deployment
-Phase 2: #2, #5 (framer-motion cleanup, image optimization) — follow-up
-Phase 3: #4, #6, #8 (related products query, virtualization prep, search debounce) — polish
+---
 
-I recommend **Approach C** — it lets you measure improvements at each phase and prioritize based on real user metrics.
+## Batch 6: Admin Order Management
 
+- Orders list with search, filters (status, date, delivery type, payment), sorting, pagination
+- Inline status update via dropdown
+- Order detail page with status timeline, customer/shipping info, items table, admin notes
+- CSV export via edge function
+- Bulk actions (status update, export)
+
+---
+
+## Batch 7: Admin Inventory Management
+
+- Products table with search, filter, sort, status toggle
+- 4-step Add/Edit Product form:
+  1. Basic info (name, slug, category, description, material, fit, occasion, toggles)
+  2. Pricing (base price, sale price, auto discount %)
+  3. Images (drag-drop upload with compression feedback UI)
+  4. Variants (color management + stock matrix grid)
+- Delete product (soft delete, hard delete for main_admin)
+
+---
+
+## Batch 8: Admin Coupons + Admin Management + Settings
+
+- **Coupons**: CRUD table + create/edit modal, inline analytics expand
+- **Admin Management** (main_admin only): admin users table, add sub-admin (via edge function), edit, delete
+- **Settings** (main_admin only): store info, delivery settings, social links, Razorpay placeholder
+
+---
+
+## Batch 9: Customer-Facing Pages (10 pages)
+
+All using existing brand theme, Navbar, Footer:
+
+1. `/account/orders` — Guest order lookup (order# + phone)
+2. `/about` — Hero, story, values, numbers, CTA
+3. `/contact` — Contact form (inserts to `support_tickets`) + contact info
+4. `/faq` — Accordion FAQ sections
+5. `/size-guide` — Measurement chart + guide
+6. `/returns` — Return policy content
+7. `/shipping` — Shipping info content
+8. `/privacy-policy` — Privacy policy content
+9. `/terms` — Terms & conditions content
+10. `/support` — Help center with search, quick action cards, embedded FAQ + contact form
+
+---
+
+## Batch 10: Navigation & Footer Updates + Routing
+
+- Update Footer with all new page links
+- Update mobile hamburger menu
+- Add all new routes to `App.tsx`
+- Enable Supabase realtime on `orders` and `support_tickets` tables
+
+---
+
+## Technical Decisions
+
+
+| Decision            | Approach                                                                                                            |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Admin roles         | Separate `admin_roles` table + `is_admin()` / `is_main_admin()` security definer functions to prevent RLS recursion |
+| Admin user creation | Edge function with service role key (never exposed client-side)                                                     |
+| Image compression   | Client-side Canvas API, no external library                                                                         |
+| Charts              | Recharts (already installed)                                                                                        |
+| Admin state         | Zustand store for admin session                                                                                     |
+| Color theme         | Keep existing HSL variables (`340 82% 38%` primary), add admin sidebar dark colors as Tailwind utilities            |
+| Realtime            | Supabase channels for new order notifications in admin                                                              |
+| Customer auth       | Not implemented (Phase 3), guest order lookup only                                                                  |
+
+
+## Files to Create/Modify (estimated 50+ files)
+
+**New files:** ~45 component/page files, 5 edge functions, 1 utility, 1 admin store, 1 admin auth context
+**Modified files:** `App.tsx` (routes), `Footer.tsx` (links), `Navbar.tsx` (menu links), `supabase/config.toml` (edge function configs)
+
+(Delete the entire functionality related to wishlist i don't want wishlist feature in website entirely delete backend, frontend, database, each and everything related to wishlist)

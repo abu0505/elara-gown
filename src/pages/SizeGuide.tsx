@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Lightbulb, Ruler } from "lucide-react";
 
@@ -12,7 +11,7 @@ const sizes = [
 ];
 
 const SizeGuide = () => (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="container py-8 md:py-12 max-w-3xl">
+  <div className="animate-in fade-in duration-200 container py-8 md:py-12 max-w-3xl">
     <h1 className="font-heading text-2xl md:text-3xl font-bold mb-4">Size Guide</h1>
     <p className="text-muted-foreground font-body mb-8">Use the chart below to find your perfect fit. Measure yourself wearing light clothing for accuracy.</p>
     <Table>
@@ -45,8 +44,7 @@ const SizeGuide = () => (
       <p className="flex items-center gap-2"><Lightbulb className="h-4 w-4 text-primary flex-shrink-0" /> If you're between sizes, we recommend sizing up for comfort.</p>
       <p className="flex items-center gap-2"><Ruler className="h-4 w-4 text-primary flex-shrink-0" /> Stretch fabrics may fit differently — refer to product descriptions for fabric details.</p>
     </div>
-  </motion.div>
+  </div>
 );
 
 export default SizeGuide;
-
