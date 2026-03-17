@@ -22,7 +22,7 @@ const ProductDetail = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const { data: product, isLoading } = useProductDetail(productId);
-  const { data: allProducts } = useAllProducts();
+  const { data: relatedProductsData } = useRelatedProducts(product?.categoryId, product?.id, 8);
   const addItem = useCartStore((s) => s.addItem);
 
   const [selectedColor, setSelectedColor] = useState<string>("");
