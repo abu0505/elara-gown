@@ -1,7 +1,5 @@
-import { motion } from "framer-motion";
-
 const Shipping = () => (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="container py-8 md:py-12 max-w-3xl">
+  <div className="animate-in fade-in duration-200 container py-8 md:py-12 max-w-3xl">
     <h1 className="font-heading text-2xl md:text-3xl font-bold mb-8">Shipping Information</h1>
     <div className="space-y-8 text-sm text-muted-foreground font-body">
       <section><h2 className="font-heading text-lg font-semibold text-foreground mb-3">Delivery Zones</h2><p>We deliver across India — all states and union territories are covered.</p></section>
@@ -11,7 +9,7 @@ const Shipping = () => (
       <section><h2 className="font-heading text-lg font-semibold text-foreground mb-3">Tracking</h2><p>A tracking link will be shared via SMS and email once your order is dispatched. You can also use our Track Order page.</p></section>
       <section><h2 className="font-heading text-lg font-semibold text-foreground mb-3">Damaged in Transit</h2><p>If your package arrives damaged, contact us within 24 hours of delivery with photos. We'll arrange a replacement or full refund at no extra cost.</p></section>
     </div>
-  </motion.div>
+  </div>
 );
 
 export default Shipping;

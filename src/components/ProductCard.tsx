@@ -1,12 +1,8 @@
-import { ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/ui/StarRating";
-import { toast } from "sonner";
 import type { Product } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
 
 interface ProductCardProps {
   product: Product;
@@ -15,11 +11,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, className }: ProductCardProps) {
   return (
-    <motion.div
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.15 }}
-      className={cn("group", className)}
-    >
+    <div className={cn("group transition-transform duration-150 hover:-translate-y-1", className)}>
       <Link to={`/products/${product.id}`} className="block">
         <div className="bg-card rounded-xl border border-border/50 overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-primary/20 h-full flex flex-col">
           <div className="relative aspect-[4/5] overflow-hidden bg-muted">
@@ -109,6 +101,6 @@ export function ProductCard({ product, className }: ProductCardProps) {
           </div>
         </div>
       </Link>
-    </motion.div>
+    </div>
   );
 }

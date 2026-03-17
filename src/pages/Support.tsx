@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -25,7 +24,7 @@ const Support = () => {
   const filteredFAQs = popularFAQs.filter(f => !search || f.q.toLowerCase().includes(search.toLowerCase()) || f.a.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="container py-8 md:py-12">
+    <div className="animate-in fade-in duration-200 container py-8 md:py-12">
       <div className="max-w-2xl mx-auto text-center mb-10">
         <h1 className="font-heading text-2xl md:text-3xl font-bold mb-4">How can we help you?</h1>
         <div className="relative">
@@ -61,7 +60,7 @@ const Support = () => {
           <Link to="/contact" className="text-primary text-sm font-medium font-body hover:underline">Contact Us →</Link>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

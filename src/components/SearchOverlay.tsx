@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useDeferredValue, useMemo } from "react";
 import { Search, X, TrendingUp, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAllProducts } from "@/hooks/useProducts";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 const trendingSearches = ["Party Dresses", "Summer Collection", "Under ₹999", "Floral Dresses", "Ethnic Wear"];
 
@@ -14,6 +14,7 @@ interface SearchOverlayProps {
 
 export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const inputRef = useRef<HTMLInputElement>(null);
   const { data: products } = useAllProducts();
   const [recent, setRecent] = useState<string[]>(() => {
@@ -34,12 +35,14 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  const filtered = query.length >= 2
-    ? (products || []).filter((p) =>
-        p.name.toLowerCase().includes(query.toLowerCase()) ||
-        p.category.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 8)
-    : [];
+  const filtered = useMemo(() => {
+    if (deferredQuery.length < 2) return [];
+    const q = deferredQuery.toLowerCase();
+    return (products || []).filter((p) =>
+      p.name.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q)
+    ).slice(0, 8);
+  }, [deferredQuery, products]);
 
   const saveSearch = (term: string) => {
     const updated = [term, ...recent.filter((r) => r !== term)].slice(0, 5);
@@ -74,7 +77,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
               </button>
             </div>
 
-            {query.length < 2 ? (
+            {deferredQuery.length < 2 ? (
               <div className="space-y-6">
                 {recent.length > 0 && (
                   <div>

@@ -6,6 +6,7 @@ export interface Product {
   name: string;
   brand: string;
   category: string;
+  categoryId: string | null;
   price: number;
   originalPrice: number;
   discountPercent: number;
@@ -84,7 +85,6 @@ function toStorefrontProduct(p: SupabaseProduct): Product {
 
   const totalStock = (p.variants || []).reduce((sum, v) => sum + v.stock_qty, 0);
 
-  // Compute rating from reviews
   const approvedReviews = p.reviews || [];
   const reviewCount = approvedReviews.length;
   const avgRating = reviewCount > 0
@@ -96,6 +96,7 @@ function toStorefrontProduct(p: SupabaseProduct): Product {
     name: p.name,
     brand: "Elara",
     category: p.category?.slug || "",
+    categoryId: p.category_id,
     price: p.sale_price || p.base_price,
     originalPrice: p.base_price,
     discountPercent: p.discount_percent || 0,
@@ -227,6 +228,57 @@ export function useProductDetail(productId: string | undefined) {
       return null;
     },
     enabled: !!productId,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+/** Lightweight hook: fetches only 6 random images for the lookbook strip */
+export function useLookbookImages() {
+  return useQuery({
+    queryKey: ["lookbook-images"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_images")
+        .select("public_url, product_id")
+        .eq("is_primary", true)
+        .limit(12);
+
+      if (error || !data || data.length === 0) return [];
+
+      // Shuffle and take 6
+      const shuffled = [...data].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, 6).map(img => ({
+        src: img.public_url,
+        link: `/products/${img.product_id}`,
+      }));
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+/** Fetches related products by category_id, excluding a specific product */
+export function useRelatedProducts(categoryId: string | null | undefined, excludeId: string | undefined, limit = 8) {
+  return useQuery({
+    queryKey: ["products", "related", categoryId, excludeId],
+    queryFn: async () => {
+      if (!categoryId) return [];
+      
+      let query = supabase
+        .from("products")
+        .select(PRODUCT_SELECT)
+        .eq("is_active", true)
+        .eq("category_id", categoryId)
+        .limit(limit);
+
+      if (excludeId) {
+        query = query.neq("id", excludeId);
+      }
+
+      const { data, error } = await query;
+      if (error || !data || data.length === 0) return [];
+      return (data as unknown as SupabaseProduct[]).map(toStorefrontProduct);
+    },
+    enabled: !!categoryId,
     staleTime: 1000 * 60 * 5,
   });
 }

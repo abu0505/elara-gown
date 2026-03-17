@@ -1,11 +1,10 @@
-import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, Award, Users } from "lucide-react";
 
 const About = () => (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+  <div className="animate-in fade-in duration-200">
     <div className="relative h-[50vh] bg-muted overflow-hidden">
       <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1400&h=600&fit=crop" alt="Fashion editorial" className="w-full h-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent flex items-end">
@@ -53,7 +52,7 @@ const About = () => (
         <Button asChild size="lg"><Link to="/products">Shop Now</Link></Button>
       </section>
     </div>
-  </motion.div>
+  </div>
 );
 
 export default About;

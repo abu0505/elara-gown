@@ -1,5 +1,4 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { motion } from "framer-motion";
 
 const faqSections = [
   { title: "Orders & Delivery", items: [
@@ -27,7 +26,7 @@ const faqSections = [
 ];
 
 const FAQ = () => (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="container py-8 md:py-12 max-w-3xl">
+  <div className="animate-in fade-in duration-200 container py-8 md:py-12 max-w-3xl">
     <h1 className="font-heading text-2xl md:text-3xl font-bold mb-8">Frequently Asked Questions</h1>
     <div className="space-y-8">
       {faqSections.map((section, i) => (
@@ -44,7 +43,7 @@ const FAQ = () => (
         </div>
       ))}
     </div>
-  </motion.div>
+  </div>
 );
 
 export default FAQ;
