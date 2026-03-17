@@ -11,7 +11,7 @@ import { SizeGuideModal } from "@/components/SizeGuideModal";
 import { ProductCard } from "@/components/ProductCard";
 import { StarRating } from "@/components/ui/StarRating";
 import { useCartStore } from "@/stores/cartStore";
-import { useProductDetail, useAllProducts } from "@/hooks/useProducts";
+import { useProductDetail, useRelatedProducts } from "@/hooks/useProducts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Minus, Plus, ShoppingBag, Truck, ChevronLeft, ChevronRight, CheckCircle, RefreshCw, Banknote, Loader2 } from "lucide-react";
